@@ -1,0 +1,124 @@
+# Circle Line Stations Data
+
+This file contains the Circle Line stations for initial testing and development.
+
+## Circle Line Stations (Clockwise from Paddington)
+
+1. **Paddington** (Zone 1)
+   - Coordinates: 51.5154, -0.1755
+   - Connections: Bakerloo, District, Hammersmith & City
+
+2. **Edgware Road** (Zone 1)
+   - Coordinates: 51.5203, -0.1679
+   - Connections: Bakerloo, District, Hammersmith & City
+
+3. **Baker Street** (Zone 1)
+   - Coordinates: 51.5226, -0.1571
+   - Connections: Bakerloo, Metropolitan, Hammersmith & City
+
+4. **Great Portland Street** (Zone 1)
+   - Coordinates: 51.5238, -0.1439
+   - Connections: Metropolitan, Hammersmith & City
+
+5. **Euston Square** (Zone 1)
+   - Coordinates: 51.5255, -0.1359
+   - Connections: Metropolitan, Hammersmith & City
+
+6. **King's Cross St. Pancras** (Zone 1)
+   - Coordinates: 51.5308, -0.1238
+   - Connections: Metropolitan, Northern, Piccadilly, Victoria, Hammersmith & City
+
+7. **Farringdon** (Zone 1)
+   - Coordinates: 51.5203, -0.1053
+   - Connections: Metropolitan, Hammersmith & City
+
+8. **Barbican** (Zone 1)
+   - Coordinates: 51.5204, -0.0978
+   - Connections: Metropolitan, Hammersmith & City
+
+9. **Moorgate** (Zone 1)
+   - Coordinates: 51.5186, -0.0886
+   - Connections: Metropolitan, Northern, Hammersmith & City
+
+10. **Liverpool Street** (Zone 1)
+    - Coordinates: 51.5178, -0.0819
+    - Connections: Central, Metropolitan, Hammersmith & City
+
+11. **Aldgate** (Zone 1)
+    - Coordinates: 51.5143, -0.0755
+    - Connections: Metropolitan
+
+12. **Tower Hill** (Zone 1)
+    - Coordinates: 51.5098, -0.0766
+    - Connections: District
+
+13. **Monument** (Zone 1)
+    - Coordinates: 51.5108, -0.0863
+    - Connections: District, Northern
+
+14. **Cannon Street** (Zone 1)
+    - Coordinates: 51.5113, -0.0904
+    - Connections: District
+
+15. **Mansion House** (Zone 1)
+    - Coordinates: 51.5122, -0.0940
+    - Connections: District
+
+16. **Blackfriars** (Zone 1)
+    - Coordinates: 51.5120, -0.1031
+    - Connections: District
+
+17. **Temple** (Zone 1)
+    - Coordinates: 51.5111, -0.1141
+    - Connections: District
+
+18. **Embankment** (Zone 1)
+    - Coordinates: 51.5074, -0.1223
+    - Connections: Bakerloo, District, Northern
+
+19. **Westminster** (Zone 1)
+    - Coordinates: 51.4994, -0.1247
+    - Connections: District, Jubilee
+
+20. **St. James's Park** (Zone 1)
+    - Coordinates: 51.4994, -0.1338
+    - Connections: District
+
+21. **Victoria** (Zone 1)
+    - Coordinates: 51.4952, -0.1441
+    - Connections: District, Victoria
+
+22. **Sloane Square** (Zone 1)
+    - Coordinates: 51.4924, -0.1564
+    - Connections: District
+
+23. **South Kensington** (Zone 1)
+    - Coordinates: 51.4944, -0.1738
+    - Connections: District, Piccadilly
+
+24. **Gloucester Road** (Zone 1)
+    - Coordinates: 51.4945, -0.1829
+    - Connections: District, Piccadilly
+
+25. **High Street Kensington** (Zone 1)
+    - Coordinates: 51.5009, -0.1922
+    - Connections: District
+
+26. **Notting Hill Gate** (Zone 1)
+    - Coordinates: 51.5087, -0.1967
+    - Connections: Central, District
+
+27. **Bayswater** (Zone 1)
+    - Coordinates: 51.5122, -0.1879
+    - Connections: District
+
+28. **Paddington** (Zone 1) - Back to start
+    - Coordinates: 51.5154, -0.1755
+    - Connections: Bakerloo, District, Hammersmith & City
+
+## Notes
+- All stations are in Zone 1
+- The Circle Line operates both clockwise and counter-clockwise
+- Some stations have multiple platforms for different directions
+- Peak hours: 7:00-9:30 AM and 5:00-7:00 PM
+- Off-peak hours: All other times

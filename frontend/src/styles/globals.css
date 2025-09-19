@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for Tube Trace */
+.tube-red {
+  background-color: #E32017;
+}
+
+.tube-blue {
+  background-color: #003688;
+}
+
+.tube-green {
+  background-color: #00782A;
+}
+
+.tube-yellow {
+  background-color: #FFD700;
+}
+
+.tube-purple {
+  background-color: #9B0056;
+}
+
+.tube-pink {
+  background-color: #F3A9BB;
+}
+
+.tube-orange {
+  background-color: #FF8C00;
+}
+
+.tube-brown {
+  background-color: #8B4513;
+}
+
+.tube-grey {
+  background-color: #A0A5A9;
+}
+
+.tube-black {
+  background-color: #000000;
+}

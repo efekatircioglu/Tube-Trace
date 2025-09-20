@@ -189,6 +189,28 @@ async def get_line_status(line_ids: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
+@app.get("/api/tfl/crowding/{naptan_id}")
+async def get_station_crowding(naptan_id: str):
+    """Get live crowding data for a specific station"""
+    if not TFL_API_KEY:
+        raise HTTPException(status_code=500, detail="TFL_API_KEY not configured")
+    
+    url = f"{TFL_BASE_URL}/crowding/{naptan_id}/Live"
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                url,
+                params={"app_key": TFL_API_KEY},
+                timeout=10.0
+            )
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=500, detail=f"TFL API error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

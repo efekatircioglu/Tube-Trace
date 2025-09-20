@@ -109,4 +109,15 @@ export const tflApi = {
       throw error;
     }
   },
+
+  // Station Crowding Data
+  getStationCrowding: async (naptanId: string) => {
+    try {
+      const response = await apiClient.get(`/api/tfl/crowding/${naptanId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Station Crowding Error:', error);
+      throw error;
+    }
+  },
 };

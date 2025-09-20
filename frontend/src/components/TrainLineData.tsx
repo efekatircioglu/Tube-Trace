@@ -1035,6 +1035,727 @@ export default function TrainLineData() {
     return false;
   };
 
+  // === UNIFIED LINE DATA INTERFACE ===
+  
+  // Define types for the unified line data structure
+  interface LineRoute {
+    name: string;
+    stations: string[];
+    reverseHandling?: boolean; // Whether to handle reverse routes automatically
+  }
+  
+  interface LineJunction {
+    station: string;
+    conditions: {
+      destinationKeywords: string[];
+      nextStation: string;
+    }[];
+  }
+  
+  interface LineData {
+    routes: LineRoute[];
+    junctions?: LineJunction[];
+    specialCases?: {
+      station: string;
+      conditions: {
+        destinationKeywords: string[];
+        action: 'terminal' | 'next';
+        nextStation?: string;
+      }[];
+    }[];
+  }
+  
+  // Central Line data structure
+  const centralLineData: LineData = {
+    routes: [
+      {
+        name: 'core',
+        stations: [
+          "West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford",
+          "Perivale", "Hanger Lane", "North Acton", "East Acton", "White City",
+          "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway",
+          "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus",
+          "Tottenham Court Road", "Holborn", "Chancery Lane", "St. Paul's",
+          "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford",
+          "Leyton", "Leytonstone"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'ealing-broadway',
+        stations: [
+          "Ealing Broadway", "West Acton", "North Acton", "East Acton", "White City",
+          "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway",
+          "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus",
+          "Tottenham Court Road", "Holborn", "Chancery Lane", "St. Paul's",
+          "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford",
+          "Leyton", "Leytonstone", "Snaresbrook", "South Woodford", "Woodford",
+          "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping",
+          "Roding Valley", "Chigwell", "Grange Hill", "Wanstead", "Redbridge", 
+          "Gants Hill", "Newbury Park", "Barkingside", "Fairlop", "Hainault"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'white-city',
+        stations: [
+          "West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford",
+          "Perivale", "Hanger Lane", "North Acton", "East Acton", "White City"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'ruislip-gardens',
+        stations: ["West Ruislip", "Ruislip Gardens"],
+        reverseHandling: true
+      },
+      {
+        name: 'epping',
+        stations: [
+          "West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford",
+          "Perivale", "Hanger Lane", "North Acton", "East Acton", "White City",
+          "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway",
+          "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus",
+          "Tottenham Court Road", "Holborn", "Chancery Lane", "St. Paul's",
+          "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford",
+          "Leyton", "Leytonstone", "Snaresbrook", "South Woodford", "Woodford",
+          "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping"
+        ]
+      },
+      {
+        name: 'loughton',
+        stations: [
+          "West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford",
+          "Perivale", "Hanger Lane", "North Acton", "East Acton", "White City",
+          "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway",
+          "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus",
+          "Tottenham Court Road", "Holborn", "Chancery Lane", "St. Paul's",
+          "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford",
+          "Leyton", "Leytonstone", "Snaresbrook", "South Woodford", "Woodford",
+          "Buckhurst Hill", "Loughton"
+        ]
+      },
+      {
+        name: 'hainault',
+        stations: [
+          "West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford",
+          "Perivale", "Hanger Lane", "North Acton", "East Acton", "White City",
+          "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway",
+          "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus",
+          "Tottenham Court Road", "Holborn", "Chancery Lane", "St. Paul's",
+          "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford",
+          "Leyton", "Leytonstone", "Snaresbrook", "South Woodford", "Woodford",
+          "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping",
+          "Roding Valley", "Chigwell", "Grange Hill", "Wanstead", "Redbridge", 
+          "Gants Hill", "Newbury Park", "Barkingside", "Fairlop", "Hainault"
+        ]
+      },
+      {
+        name: 'newbury-park',
+        stations: [
+          "West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford",
+          "Perivale", "Hanger Lane", "North Acton", "East Acton", "White City",
+          "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway",
+          "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus",
+          "Tottenham Court Road", "Holborn", "Chancery Lane", "St. Paul's",
+          "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford",
+          "Leyton", "Leytonstone", "Wanstead", "Redbridge", "Gants Hill",
+          "Newbury Park"
+        ]
+      },
+      {
+        name: 'grange-hill',
+        stations: [
+          "West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford",
+          "Perivale", "Hanger Lane", "North Acton", "East Acton", "White City",
+          "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway",
+          "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus",
+          "Tottenham Court Road", "Holborn", "Chancery Lane", "St. Paul's",
+          "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford",
+          "Leyton", "Leytonstone", "Snaresbrook", "South Woodford", "Woodford",
+          "Roding Valley", "Chigwell", "Grange Hill"
+        ]
+      }
+    ],
+    junctions: [
+      {
+        station: 'north acton',
+        conditions: [
+          { destinationKeywords: ['ealing broadway'], nextStation: 'West Acton' },
+          { destinationKeywords: ['white city'], nextStation: 'East Acton' },
+          { destinationKeywords: ['ruislip gardens', 'west ruislip'], nextStation: 'East Acton' }
+        ]
+      },
+      {
+        station: 'leytonstone',
+        conditions: [
+          { destinationKeywords: ['epping', 'loughton'], nextStation: 'Snaresbrook' },
+          { destinationKeywords: ['hainault', 'newbury park'], nextStation: 'Wanstead' },
+          { destinationKeywords: ['grange hill'], nextStation: 'Snaresbrook' }
+        ]
+      },
+      {
+        station: 'woodford',
+        conditions: [
+          { destinationKeywords: ['grange hill'], nextStation: 'Roding Valley' },
+          { destinationKeywords: ['epping', 'loughton'], nextStation: 'Buckhurst Hill' }
+        ]
+      }
+    ]
+  };
+  
+  // District Line data structure
+  const districtLineData: LineData = {
+    routes: [
+      {
+        name: 'upminster',
+        stations: [
+          "Earl's Court", "Gloucester Road", "South Kensington", "Sloane Square",
+          "Victoria", "St. James's Park", "Westminster", "Embankment", "Temple",
+          "Blackfriars", "Mansion House", "Cannon Street", "Monument", "Tower Hill",
+          "Aldgate East", "Whitechapel", "Stepney Green", "Mile End", "Bow Road",
+          "Bromley-by-Bow", "West Ham", "Plaistow", "Upton Park", "East Ham",
+          "Barking", "Upney", "Becontree", "Dagenham Heathway", "Dagenham East",
+          "Elm Park", "Hornchurch", "Upminster Bridge", "Upminster"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'ealing-broadway',
+        stations: [
+          "Earl's Court", "West Kensington", "Barons Court", "Hammersmith",
+          "Ravenscourt Park", "Stamford Brook", "Turnham Green", "Chiswick Park",
+          "Acton Town", "Ealing Common", "Ealing Broadway"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'richmond',
+        stations: [
+          "Earl's Court", "West Kensington", "Barons Court", "Hammersmith",
+          "Ravenscourt Park", "Stamford Brook", "Turnham Green", "Gunnersbury",
+          "Kew Gardens", "Richmond"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'wimbledon',
+        stations: [
+          "Earl's Court", "West Brompton", "Fulham Broadway", "Parsons Green",
+          "Putney Bridge", "East Putney", "Southfields", "Wimbledon Park", "Wimbledon"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'olympia',
+        stations: ["Earl's Court", "Kensington (Olympia)"],
+        reverseHandling: true
+      },
+      {
+        name: 'edgware-road',
+        stations: [
+          "Earl's Court", "High Street Kensington", "Notting Hill Gate", "Bayswater",
+          "Paddington", "Edgware Road"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'barking',
+        stations: [
+          "Earl's Court", "Gloucester Road", "South Kensington", "Sloane Square",
+          "Victoria", "St. James's Park", "Westminster", "Embankment", "Temple",
+          "Blackfriars", "Mansion House", "Cannon Street", "Monument", "Tower Hill",
+          "Aldgate East", "Whitechapel", "Stepney Green", "Mile End", "Bow Road",
+          "Bromley-by-Bow", "West Ham", "Plaistow", "Upton Park", "East Ham", "Barking"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'tower-hill',
+        stations: [
+          "Earl's Court", "Gloucester Road", "South Kensington", "Sloane Square",
+          "Victoria", "St. James's Park", "Westminster", "Embankment", "Temple",
+          "Blackfriars", "Mansion House", "Cannon Street", "Monument", "Tower Hill"
+        ],
+        reverseHandling: true
+      }
+    ]
+  };
+  
+  // === HOW TO ADD NEW LINES ===
+  // To add a new line, simply:
+  // 1. Create a new LineData object following the structure above
+  // 2. Add a case in the switch statement in getUnifiedNextStation()
+  // 3. Add the lineId check in the main logic (like the central/district checks)
+  // 
+  // Example for Bakerloo Line:
+  // const bakerlooLineData: LineData = {
+  //   routes: [
+  //     {
+  //       name: 'elephant-castle',
+  //       stations: ["Harrow & Wealdstone", "Kenton", "South Kenton", ...],
+  //       reverseHandling: true
+  //     }
+  //   ],
+  //   junctions: [
+  //     {
+  //       station: 'some junction',
+  //       conditions: [
+  //         { destinationKeywords: ['destination1'], nextStation: 'Next Station 1' },
+  //         { destinationKeywords: ['destination2'], nextStation: 'Next Station 2' }
+  //       ]
+  //     }
+  //   ]
+  // };
+  
+  // Unified function to get next station for any line
+  const getUnifiedNextStation = (lineId: string, currentStation: string, destination: string): string => {
+    const destinationLower = destination.toLowerCase();
+    const currentStationLower = currentStation.toLowerCase();
+    
+    // Get line data
+    let lineData: LineData;
+    switch (lineId.toLowerCase()) {
+      case 'central':
+        lineData = centralLineData;
+        break;
+      case 'district':
+        lineData = districtLineData;
+        break;
+      default:
+        return 'Unknown'; // Line not supported yet
+    }
+    
+    // Check special cases first
+    if (lineData.specialCases) {
+      for (const specialCase of lineData.specialCases) {
+        if (specialCase.station.toLowerCase() === currentStationLower) {
+          for (const condition of specialCase.conditions) {
+            if (condition.destinationKeywords.some(keyword => destinationLower.includes(keyword))) {
+              if (condition.action === 'terminal') {
+                return 'Terminal';
+              } else if (condition.action === 'next' && condition.nextStation) {
+                return condition.nextStation;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Check junctions
+    if (lineData.junctions) {
+      for (const junction of lineData.junctions) {
+        if (junction.station.toLowerCase() === currentStationLower) {
+          for (const condition of junction.conditions) {
+            if (condition.destinationKeywords.some(keyword => destinationLower.includes(keyword))) {
+              console.log(`🔵 ${junction.station.toUpperCase()} JUNCTION:`, { 
+                currentStation, 
+                destination, 
+                destinationLower,
+                matchedKeywords: condition.destinationKeywords.filter(k => destinationLower.includes(k)),
+                nextStation: condition.nextStation 
+              });
+              return condition.nextStation;
+            }
+          }
+        }
+      }
+    }
+    
+    // Special handling for District Line cross-route routing
+    if (lineId.toLowerCase() === 'district') {
+      // Check if we need to route through Earl's Court for cross-route destinations
+      const currentStationLower = currentStation.toLowerCase();
+      const destinationLower = destination.toLowerCase();
+      
+      // Define route groups
+      const westernRoutes = ['ealing-broadway', 'richmond', 'wimbledon', 'olympia', 'edgware-road'];
+      const easternRoutes = ['upminster', 'barking', 'tower-hill'];
+      
+      // Check if current station is on eastern route but destination is western
+      const isOnEasternRoute = easternRoutes.some(routeName => {
+        const route = lineData.routes.find(r => r.name === routeName);
+        return route && route.stations.some(station => station.toLowerCase() === currentStationLower);
+      });
+      
+      const isWesternDestination = westernRoutes.some(routeName => 
+        destinationLower.includes(routeName.replace('-', ' ')) || 
+        destinationLower.includes(routeName.split('-')[0])
+      );
+      
+      // Check if current station is on western route but destination is eastern
+      const isOnWesternRoute = westernRoutes.some(routeName => {
+        const route = lineData.routes.find(r => r.name === routeName);
+        return route && route.stations.some(station => station.toLowerCase() === currentStationLower);
+      });
+      
+      const isEasternDestination = easternRoutes.some(routeName => 
+        destinationLower.includes(routeName.replace('-', ' ')) || 
+        destinationLower.includes(routeName.split('-')[0])
+      );
+      
+      // Handle cross-route routing
+      if ((isOnEasternRoute && isWesternDestination) || (isOnWesternRoute && isEasternDestination)) {
+        // Find the current station's route
+        const currentRoute = lineData.routes.find(route => 
+          route.stations.some(station => station.toLowerCase() === currentStationLower)
+        );
+        
+        if (currentRoute) {
+          const currentIndex = currentRoute.stations.findIndex(station => 
+            station.toLowerCase() === currentStationLower
+          );
+          
+          // Check if we need to go towards Earl's Court
+          if (currentIndex !== -1) {
+            // If we're on eastern route going to western destination, go towards Earl's Court
+            if (isOnEasternRoute && isWesternDestination) {
+              if (currentIndex > 0) {
+                const nextStation = currentRoute.stations[currentIndex - 1];
+                console.log(`🔵 DISTRICT LINE CROSS-ROUTE (EAST→WEST):`, { 
+                  currentStation, 
+                  destination, 
+                  nextStation,
+                  reason: 'Going towards Earl\'s Court to change to western route'
+                });
+                return nextStation;
+              }
+            }
+            
+            // If we're on western route going to eastern destination, go towards Earl's Court
+            if (isOnWesternRoute && isEasternDestination) {
+              if (currentIndex < currentRoute.stations.length - 1) {
+                const nextStation = currentRoute.stations[currentIndex + 1];
+                console.log(`🔵 DISTRICT LINE CROSS-ROUTE (WEST→EAST):`, { 
+                  currentStation, 
+                  destination, 
+                  nextStation,
+                  reason: 'Going towards Earl\'s Court to change to eastern route'
+                });
+                return nextStation;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Special handling for Redbridge station
+    if (currentStationLower === 'redbridge') {
+      // Check if destination is a western destination (White City, Ealing, West Ruislip, etc.)
+      const westernDestinations = [
+        'white city', 'ealing', 'west ruislip', 'ruislip gardens', 'ruislip', 
+        'northolt', 'greenford', 'perivale', 'hanger lane', 'north acton',
+        'east acton', 'shepherd\'s bush', 'holland park', 'notting hill gate',
+        'queensway', 'lancaster gate', 'marble arch', 'bond street', 'oxford circus',
+        'tottenham court road', 'holborn', 'chancery lane', 'st. paul\'s', 'bank',
+        'liverpool street', 'bethnal green', 'mile end', 'stratford', 'leyton', 'leytonstone'
+      ];
+      
+      const isWesternDestination = westernDestinations.some(dest => 
+        destinationLower.includes(dest)
+      );
+      
+      if (isWesternDestination) {
+        console.log(`🔵 ${lineId.toUpperCase()} REDBRIDGE LOGIC:`, { 
+          currentStation, 
+          destination, 
+          destinationLower,
+          nextStation: 'Wanstead',
+          reason: 'At Redbridge, western destination, going back to Wanstead'
+        });
+        return 'Wanstead';
+      }
+    }
+    
+    // Special handling for terminal stations
+    // If we're at a terminal station and destination is different, return the previous station
+    const terminalStationLogic = (() => {
+      // Check if current station is a terminal station
+      const isAtTerminal = lineData.routes.some(route => {
+        if (route.stations.length > 0) {
+          const firstStation = route.stations[0].toLowerCase();
+          const lastStation = route.stations[route.stations.length - 1].toLowerCase();
+          return currentStationLower === firstStation || currentStationLower === lastStation;
+        }
+        return false;
+      });
+      
+      if (isAtTerminal) {
+        // Find which route this terminal belongs to
+        for (const route of lineData.routes) {
+          if (route.stations.length > 0) {
+            const firstStation = route.stations[0].toLowerCase();
+            const lastStation = route.stations[route.stations.length - 1].toLowerCase();
+            
+            // Check if we're at the first station (like West Ruislip)
+            if (currentStationLower === firstStation) {
+              // Check if destination is NOT this terminal station
+              if (!destinationLower.includes(firstStation)) {
+                // Return the next station in the route (second station)
+                if (route.stations.length > 1) {
+                  console.log(`🔵 ${lineId.toUpperCase()} TERMINAL LOGIC - FIRST STATION:`, { 
+                    currentStation, 
+                    destination, 
+                    terminalStation: route.stations[0],
+                    nextStation: route.stations[1],
+                    reason: 'At first terminal, destination different, going forward'
+                  });
+                  return route.stations[1];
+                }
+              }
+            }
+            
+            // Check if we're at the last station (like Epping)
+            if (currentStationLower === lastStation) {
+              // Check if destination is NOT this terminal station
+              if (!destinationLower.includes(lastStation)) {
+                // Return the previous station in the route (second to last station)
+                if (route.stations.length > 1) {
+                  console.log(`🔵 ${lineId.toUpperCase()} TERMINAL LOGIC - LAST STATION:`, { 
+                    currentStation, 
+                    destination, 
+                    terminalStation: route.stations[route.stations.length - 1],
+                    nextStation: route.stations[route.stations.length - 2],
+                    reason: 'At last terminal, destination different, going backward'
+                  });
+                  return route.stations[route.stations.length - 2];
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      return null; // No terminal logic applied
+    })();
+    
+    if (terminalStationLogic) {
+      return terminalStationLogic;
+    }
+    
+    // Find the appropriate route based on destination
+    let selectedRoute: LineRoute | null = null;
+    
+    // First, try to find routes that contain the current station
+    const routesWithCurrentStation = lineData.routes.filter(route => 
+      route.stations.some(station => station.toLowerCase() === currentStationLower)
+    );
+    
+    // Then, from those routes, find the one that matches the destination
+    // For District Line, prioritize routes based on destination matching
+    for (const route of routesWithCurrentStation) {
+      // Check if destination matches route name or contains route keywords
+      const routeKeywords = route.name.split('-');
+      
+      // Check if destination contains any route keywords
+      const matchesRouteKeywords = routeKeywords.some(keyword => destinationLower.includes(keyword));
+      
+      // Special case: check if destination matches the first station of the route (for reverse routes)
+      const matchesFirstStation = route.stations.length > 0 && 
+        destinationLower.includes(route.stations[0].toLowerCase());
+      
+      // Special case: check if destination matches the last station of the route (for forward routes)
+      const matchesLastStation = route.stations.length > 0 && 
+        destinationLower.includes(route.stations[route.stations.length - 1].toLowerCase());
+      
+      // Enhanced matching: check if destination contains any station name from the route
+      const matchesAnyStation = route.stations.some(station => 
+        destinationLower.includes(station.toLowerCase())
+      );
+      
+      // Special handling for complex destinations like "Hainault via Newbury Park"
+      const matchesComplexDestination = (() => {
+        // Check for "via" patterns
+        if (destinationLower.includes('via')) {
+          const viaParts = destinationLower.split('via');
+          const mainDestination = viaParts[0].trim();
+          const viaStation = viaParts[1]?.trim();
+          
+          // Check if main destination matches route terminus
+          if (route.stations.length > 0) {
+            const lastStation = route.stations[route.stations.length - 1].toLowerCase();
+            if (mainDestination.includes(lastStation)) {
+              return true;
+            }
+          }
+          
+          // Check if via station is in the route
+          if (viaStation && route.stations.some(station => 
+            station.toLowerCase().includes(viaStation) || viaStation.includes(station.toLowerCase())
+          )) {
+            return true;
+          }
+        }
+        return false;
+      })();
+      
+      // Special District Line logic: prioritize exact terminus matches
+      if (lineId.toLowerCase() === 'district') {
+        // If destination exactly matches the route terminus, prioritize this route
+        if (route.stations.length > 0) {
+          const routeTerminus = route.stations[route.stations.length - 1].toLowerCase();
+          if (destinationLower.includes(routeTerminus)) {
+            console.log(`🔵 DISTRICT LINE DEBUG - EXACT TERMINUS MATCH:`, { 
+              currentStation, 
+              destination, 
+              destinationLower,
+              matchedRoute: route.name,
+              routeTerminus,
+              reason: 'Exact terminus match - highest priority'
+            });
+            selectedRoute = route;
+            break;
+          }
+        }
+      }
+      
+      if (matchesRouteKeywords || matchesFirstStation || matchesLastStation || matchesAnyStation || matchesComplexDestination) {
+        console.log(`🔵 ${lineId.toUpperCase()} LINE DEBUG - ROUTE MATCHED (WITH CURRENT STATION):`, { 
+          currentStation, 
+          destination, 
+          destinationLower,
+          matchedRoute: route.name,
+          matchesRouteKeywords,
+          matchesFirstStation,
+          matchesLastStation,
+          matchesAnyStation,
+          matchesComplexDestination,
+          firstStation: route.stations[0],
+          lastStation: route.stations[route.stations.length - 1],
+          currentStationInRoute: true
+        });
+        selectedRoute = route;
+        break;
+      }
+    }
+    
+    // If no route found with current station, fall back to original logic
+    if (!selectedRoute) {
+      for (const route of lineData.routes) {
+        // Check if destination matches route name or contains route keywords
+        const routeKeywords = route.name.split('-');
+        
+        // Check if destination contains any route keywords
+        const matchesRouteKeywords = routeKeywords.some(keyword => destinationLower.includes(keyword));
+        
+        // Special case: check if destination matches the first station of the route (for reverse routes)
+        const matchesFirstStation = route.stations.length > 0 && 
+          destinationLower.includes(route.stations[0].toLowerCase());
+        
+        // Special case: check if destination matches the last station of the route (for forward routes)
+        const matchesLastStation = route.stations.length > 0 && 
+          destinationLower.includes(route.stations[route.stations.length - 1].toLowerCase());
+        
+        // Enhanced matching: check if destination contains any station name from the route
+        const matchesAnyStation = route.stations.some(station => 
+          destinationLower.includes(station.toLowerCase())
+        );
+        
+        // Special handling for complex destinations like "Hainault via Newbury Park"
+        const matchesComplexDestination = (() => {
+          // Check for "via" patterns
+          if (destinationLower.includes('via')) {
+            const viaParts = destinationLower.split('via');
+            const mainDestination = viaParts[0].trim();
+            const viaStation = viaParts[1]?.trim();
+            
+            // Check if main destination matches route terminus
+            if (route.stations.length > 0) {
+              const lastStation = route.stations[route.stations.length - 1].toLowerCase();
+              if (mainDestination.includes(lastStation)) {
+                return true;
+              }
+            }
+            
+            // Check if via station is in the route
+            if (viaStation && route.stations.some(station => 
+              station.toLowerCase().includes(viaStation) || viaStation.includes(station.toLowerCase())
+            )) {
+              return true;
+            }
+          }
+          return false;
+        })();
+        
+        if (matchesRouteKeywords || matchesFirstStation || matchesLastStation || matchesAnyStation || matchesComplexDestination) {
+          console.log(`🔵 ${lineId.toUpperCase()} LINE DEBUG - ROUTE MATCHED (FALLBACK):`, { 
+            currentStation, 
+            destination, 
+            destinationLower,
+            matchedRoute: route.name,
+            matchesRouteKeywords,
+            matchesFirstStation,
+            matchesLastStation,
+            matchesAnyStation,
+            matchesComplexDestination,
+            firstStation: route.stations[0],
+            lastStation: route.stations[route.stations.length - 1],
+            currentStationInRoute: route.stations.some(station => station.toLowerCase() === currentStationLower)
+          });
+          selectedRoute = route;
+          break;
+        }
+      }
+    }
+    
+    if (!selectedRoute) {
+      console.log(`🔵 ${lineId.toUpperCase()} LINE DEBUG - NO ROUTE FOUND:`, { 
+        currentStation, 
+        destination, 
+        destinationLower,
+        availableRoutes: lineData.routes.map(r => ({ name: r.name, firstStation: r.stations[0], lastStation: r.stations[r.stations.length - 1] }))
+      });
+      return 'Unknown'; // No matching route found
+    }
+    
+    // Handle reverse routes if enabled
+    if (selectedRoute.reverseHandling) {
+      const terminus = selectedRoute.stations[0];
+      if (destinationLower.includes(terminus.toLowerCase()) && currentStation !== terminus) {
+        // Currently on route, heading towards terminus (reverse direction)
+        const reverseRoute = [...selectedRoute.stations].reverse();
+        const currentIndex = reverseRoute.findIndex(station => 
+          station.toLowerCase() === currentStationLower
+        );
+        if (currentIndex !== -1 && currentIndex < reverseRoute.length - 1) {
+          return reverseRoute[currentIndex + 1];
+        }
+      }
+    }
+    
+    // Find current station in forward route
+    const currentIndex = selectedRoute.stations.findIndex(station => 
+      station.toLowerCase() === currentStationLower
+    );
+    
+    if (currentIndex === -1) {
+      return 'Unknown'; // Current station not found in route
+    }
+    
+    // Check if this is a terminal station
+    if (currentIndex === selectedRoute.stations.length - 1) {
+      return 'Terminal';
+    }
+    
+    // Return next station
+    const nextStation = selectedRoute.stations[currentIndex + 1];
+    console.log(`🔵 ${lineId.toUpperCase()} LINE DEBUG:`, { 
+      currentStation, 
+      destination, 
+      routeName: selectedRoute.name,
+      sequenceLength: selectedRoute.stations.length,
+      sequenceStart: selectedRoute.stations[0],
+      sequenceEnd: selectedRoute.stations[selectedRoute.stations.length - 1],
+      currentIndex,
+      nextStation,
+      isJunctionStation: lineData.junctions?.some(j => j.station.toLowerCase() === currentStationLower) || false
+    });
+    
+    return nextStation;
+  };
+
   // Helper function for intelligent next station selection
   const selectNextStationIntelligently = (lineId: string, currentStation: string, destination: string, possibleNextStations: string[]): string => {
     const destinationLower = destination.toLowerCase();
@@ -1597,16 +2318,100 @@ export default function TrainLineData() {
       "Grange Hill"
     ];
 
+    // Special handling for junction stations
+    // North Acton junction (west branches)
+    if (currentStation.toLowerCase() === 'north acton') {
+      console.log('🔵 NORTH ACTON JUNCTION:', { currentStation, destination, destinationLower });
+      if (destinationLower.includes('ealing broadway')) {
+        console.log('🔵 NORTH ACTON → WEST ACTON (Ealing Broadway branch)');
+        return 'West Acton'; // Take Ealing Broadway branch
+      } else if (destinationLower.includes('white city') || destinationLower.includes('ruislip gardens') || destinationLower.includes('west ruislip')) {
+        console.log('🔵 NORTH ACTON → EAST ACTON (Core route)');
+        return 'East Acton'; // Continue on core route
+      }
+    }
+    
+    // Leytonstone junction (east branches)
+    if (currentStation.toLowerCase() === 'leytonstone') {
+      console.log('🔵 LEYTONSTONE JUNCTION:', { currentStation, destination, destinationLower });
+      if (destinationLower.includes('epping') || destinationLower.includes('loughton')) {
+        console.log('🔵 LEYTONSTONE → SNARESBROOK (Epping/Loughton branch)');
+        return 'Snaresbrook'; // Take Epping/Loughton branch
+      } else if (destinationLower.includes('hainault') || destinationLower.includes('newbury park')) {
+        console.log('🔵 LEYTONSTONE → WANSTEAD (Hainault/Newbury Park branch)');
+        return 'Wanstead'; // Take Hainault/Newbury Park branch
+      } else if (destinationLower.includes('grange hill')) {
+        console.log('🔵 LEYTONSTONE → SNARESBROOK (Grange Hill branch via Woodford)');
+        return 'Snaresbrook'; // Take Grange Hill branch (via Woodford)
+      }
+    }
+    
+    // Woodford junction (Grange Hill branch)
+    if (currentStation.toLowerCase() === 'woodford') {
+      console.log('🔵 WOODFORD JUNCTION:', { currentStation, destination, destinationLower });
+      if (destinationLower.includes('grange hill')) {
+        console.log('🔵 WOODFORD → RODING VALLEY (Grange Hill branch)');
+        return 'Roding Valley'; // Take Grange Hill branch
+      } else if (destinationLower.includes('epping') || destinationLower.includes('loughton')) {
+        console.log('🔵 WOODFORD → BUCKHURST HILL (Epping/Loughton branch)');
+        return 'Buckhurst Hill'; // Continue to Epping/Loughton
+      }
+    }
+    
     // Determine which roadmap to use based on destination
     let sequence: string[];
     
     if (destinationLower.includes('west ruislip')) {
+      // For West Ruislip: handle reverse routes properly
+      if (centralLineCore.includes(currentStation) && currentStation !== "West Ruislip") {
+        // Currently on core route, heading towards West Ruislip
+        const reverseCore = [...centralLineCore].reverse();
+        const currentIndex = reverseCore.findIndex(station => 
+          station.toLowerCase() === currentStation.toLowerCase()
+        );
+        if (currentIndex !== -1 && currentIndex < reverseCore.length - 1) {
+          return reverseCore[currentIndex + 1];
+        }
+      }
       sequence = centralLineCore;
     } else if (destinationLower.includes('ealing broadway')) {
+      // For Ealing Broadway: handle reverse routes properly
+      if (centralLineToEalingBroadway.includes(currentStation) && currentStation !== "Ealing Broadway") {
+        // Currently on Ealing Broadway route, heading towards Ealing Broadway
+        const reverseEaling = [...centralLineToEalingBroadway].reverse();
+        const currentIndex = reverseEaling.findIndex(station => 
+          station.toLowerCase() === currentStation.toLowerCase()
+        );
+        if (currentIndex !== -1 && currentIndex < reverseEaling.length - 1) {
+          return reverseEaling[currentIndex + 1];
+        }
+      }
       sequence = centralLineToEalingBroadway;
     } else if (destinationLower.includes('white city')) {
+      // For White City: handle reverse routes properly
+      if (centralLineToWhiteCity.includes(currentStation) && currentStation !== "White City") {
+        // Currently on White City route, heading towards White City
+        const reverseWhiteCity = [...centralLineToWhiteCity].reverse();
+        const currentIndex = reverseWhiteCity.findIndex(station => 
+          station.toLowerCase() === currentStation.toLowerCase()
+        );
+        if (currentIndex !== -1 && currentIndex < reverseWhiteCity.length - 1) {
+          return reverseWhiteCity[currentIndex + 1];
+        }
+      }
       sequence = centralLineToWhiteCity;
     } else if (destinationLower.includes('ruislip gardens')) {
+      // For Ruislip Gardens: handle reverse routes properly
+      if (centralLineToRuislipGardens.includes(currentStation) && currentStation !== "Ruislip Gardens") {
+        // Currently on Ruislip Gardens route, heading towards Ruislip Gardens
+        const reverseRuislipGardens = [...centralLineToRuislipGardens].reverse();
+        const currentIndex = reverseRuislipGardens.findIndex(station => 
+          station.toLowerCase() === currentStation.toLowerCase()
+        );
+        if (currentIndex !== -1 && currentIndex < reverseRuislipGardens.length - 1) {
+          return reverseRuislipGardens[currentIndex + 1];
+        }
+      }
       sequence = centralLineToRuislipGardens;
     } else if (destinationLower.includes('epping')) {
       sequence = centralLineToEpping;
@@ -1646,7 +2451,8 @@ export default function TrainLineData() {
       sequenceStart: sequence[0],
       sequenceEnd: sequence[sequence.length - 1],
       currentIndex,
-      nextStation
+      nextStation,
+      isJunctionStation: ['north acton', 'leytonstone', 'woodford'].includes(currentStation.toLowerCase())
     });
     return nextStation;
   };
@@ -2401,10 +3207,10 @@ const districtLineToEdgwareRoad = [
       return { nextStation, duration };
     }
     
-    // Special handling for Central Line with hardcoded mapping
+    // Special handling for Central Line with unified mapping
     if (lineId === 'central') {
-      const nextStation = getCentralLineNextStation(currentStation, destination);
-      console.log(`CENTRAL Line Hardcoded Debug:`, {
+      const nextStation = getUnifiedNextStation(lineId, currentStation, destination);
+      console.log(`CENTRAL Line Unified Debug:`, {
         currentStation,
         rawDestination,
         extractedDestination: destination,
@@ -2462,8 +3268,8 @@ const districtLineToEdgwareRoad = [
     }
     
     if (lineId === 'district') {
-      // Use hardcoded District Line routing
-      const nextStation = getDistrictLineNextStation(currentStation, destination);
+      // Use unified District Line routing
+      const nextStation = getUnifiedNextStation(lineId, currentStation, destination);
       
       // Calculate duration using the District Line-determined next station
       const duration = calculateDynamicDuration(
@@ -2862,6 +3668,7 @@ const districtLineToEdgwareRoad = [
                             <th className="px-3 py-2 text-left">Arrival Time</th>
                             <th className="px-3 py-2 text-left">Platform</th>
                             <th className="px-3 py-2 text-left">Train ID</th>
+                            <th className="px-3 py-2 text-left">Tube Line</th>
                             <th className="px-3 py-2 text-left">Destination</th>
                             <th className="px-3 py-2 text-left">Next Station</th>
                             <th className="px-3 py-2 text-left">Duration</th>
@@ -2905,6 +3712,16 @@ const districtLineToEdgwareRoad = [
                                 {arrival.vehicleId ? (
                                   <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-mono">
                                     #{arrival.vehicleId}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2">
+                                {arrival.lineId ? (
+                                  <span className={`px-2 py-1 rounded text-xs font-medium inline-flex items-center ${getLineColor(arrival.lineId)}`}>
+                                    <span className="w-2 h-2 rounded-full bg-white mr-1"></span>
+                                    {arrival.lineId.charAt(0).toUpperCase() + arrival.lineId.slice(1)}
                                   </span>
                                 ) : (
                                   <span className="text-gray-400">-</span>

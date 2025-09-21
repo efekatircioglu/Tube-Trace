@@ -1282,6 +1282,45 @@ export default function TrainLineData() {
     ]
   };
   
+  // Hammersmith & City Line data structure
+  const hammersmithCityLineData: LineData = {
+    routes: [
+      {
+        name: 'barking',
+        stations: [
+          "Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane",
+          "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak",
+          "Paddington", "Edgware Road", "Baker Street", "Great Portland Street",
+          "Euston Square", "King's Cross St. Pancras", "Farringdon", "Barbican",
+          "Moorgate", "Liverpool Street", "Aldgate East", "Whitechapel",
+          "Stepney Green", "Mile End", "Bow Road", "Bromley-by-Bow",
+          "West Ham", "Plaistow", "Upton Park", "East Ham", "Barking"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'edgware-road',
+        stations: [
+          "Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane",
+          "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak",
+          "Paddington", "Edgware Road"
+        ],
+        reverseHandling: true
+      },
+      {
+        name: 'edgware-road-to-barking',
+        stations: [
+          "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square",
+          "King's Cross St. Pancras", "Farringdon", "Barbican", "Moorgate",
+          "Liverpool Street", "Aldgate East", "Whitechapel", "Stepney Green",
+          "Mile End", "Bow Road", "Bromley-by-Bow", "West Ham", "Plaistow",
+          "Upton Park", "East Ham", "Barking"
+        ],
+        reverseHandling: true
+      }
+    ]
+  };
+  
   // === HOW TO ADD NEW LINES ===
   // To add a new line, simply:
   // 1. Create a new LineData object following the structure above
@@ -1321,6 +1360,10 @@ export default function TrainLineData() {
         break;
       case 'district':
         lineData = districtLineData;
+        break;
+      case 'hammersmith-city':
+      case 'hammersmith & city':
+        lineData = hammersmithCityLineData;
         break;
       default:
         return 'Unknown'; // Line not supported yet
@@ -1436,6 +1479,87 @@ export default function TrainLineData() {
                 return nextStation;
               }
             }
+          }
+        }
+      }
+    }
+    
+    // Special handling for Hammersmith & City Line junction stations
+    if (lineId.toLowerCase() === 'hammersmith-city' || lineId.toLowerCase() === 'hammersmith & city') {
+      const currentStationLower = currentStation.toLowerCase();
+      const destinationLower = destination.toLowerCase();
+      
+      // Handle missing data destinations
+      if (destinationLower.includes('check front of train') || 
+          destinationLower.includes('check front') || destinationLower.includes('front of train')) {
+        console.log(`🔵 HAMMERSMITH & CITY MISSING DATA:`, { 
+          currentStation, 
+          destination, 
+          reason: 'Missing destination data - using default routing'
+        });
+        
+        // For missing data, use default routing based on current station position
+        // Default strategy: continue in the most common direction for each station
+        if (currentStationLower.includes('paddington')) {
+          return 'Edgware Road'; // Most common direction from Paddington
+        } else if (currentStationLower.includes('edgware road')) {
+          return 'Baker Street'; // Most common direction from Edgware Road
+        } else if (currentStationLower === 'hammersmith') {
+          return 'Goldhawk Road'; // Most common direction from Hammersmith
+        } else if (currentStationLower === 'barking') {
+          return 'East Ham'; // Most common direction from Barking
+        }
+        // For other stations, continue with normal flow
+      } else {
+        // Handle the 3 main destinations: Hammersmith, Barking, Edgware Road
+        
+        // Special handling for Paddington station - SIMPLE LOGIC
+        if (currentStationLower.includes('paddington')) {
+          console.log(`🔵 HAMMERSMITH & CITY PADDINGTON LOGIC:`, { 
+            currentStation, 
+            destination, 
+            destinationLower
+          });
+          
+          // Simple if-else logic for the 3 main destinations
+          if (destinationLower.includes('hammersmith')) {
+            console.log(`🔵 PADDINGTON → HAMMERSMITH: Going to Royal Oak`);
+            return 'Royal Oak';
+          } else if (destinationLower.includes('barking')) {
+            console.log(`🔵 PADDINGTON → BARKING: Going to Edgware Road`);
+            return 'Edgware Road';
+          } else if (destinationLower.includes('edgware')) {
+            console.log(`🔵 PADDINGTON → EDGWARE: Going to Edgware Road`);
+            return 'Edgware Road';
+          } else {
+            // Default fallback - most trains go towards Barking
+            console.log(`🔵 PADDINGTON → DEFAULT: Going to Edgware Road`);
+            return 'Edgware Road';
+          }
+        }
+        
+        // Special handling for Edgware Road station - SIMPLE LOGIC
+        if (currentStationLower.includes('edgware road')) {
+          console.log(`🔵 HAMMERSMITH & CITY EDGWARE ROAD LOGIC:`, { 
+            currentStation, 
+            destination, 
+            destinationLower
+          });
+          
+          // Simple if-else logic for the 3 main destinations
+          if (destinationLower.includes('hammersmith')) {
+            console.log(`🔵 EDGWARE ROAD → HAMMERSMITH: Going to Paddington`);
+            return 'Paddington';
+          } else if (destinationLower.includes('barking')) {
+            console.log(`🔵 EDGWARE ROAD → BARKING: Going to Baker Street`);
+            return 'Baker Street';
+          } else if (destinationLower.includes('edgware')) {
+            console.log(`🔵 EDGWARE ROAD → EDGWARE: Going to Baker Street`);
+            return 'Baker Street';
+          } else {
+            // Default fallback - most trains go towards Barking
+            console.log(`🔵 EDGWARE ROAD → DEFAULT: Going to Baker Street`);
+            return 'Baker Street';
           }
         }
       }
@@ -1598,6 +1722,26 @@ export default function TrainLineData() {
           const routeTerminus = route.stations[route.stations.length - 1].toLowerCase();
           if (destinationLower.includes(routeTerminus)) {
             console.log(`🔵 DISTRICT LINE DEBUG - EXACT TERMINUS MATCH:`, { 
+              currentStation, 
+              destination, 
+              destinationLower,
+              matchedRoute: route.name,
+              routeTerminus,
+              reason: 'Exact terminus match - highest priority'
+            });
+            selectedRoute = route;
+            break;
+          }
+        }
+      }
+      
+      // Special Hammersmith & City Line logic: prioritize exact terminus matches
+      if (lineId.toLowerCase() === 'hammersmith-city' || lineId.toLowerCase() === 'hammersmith & city') {
+        // If destination exactly matches the route terminus, prioritize this route
+        if (route.stations.length > 0) {
+          const routeTerminus = route.stations[route.stations.length - 1].toLowerCase();
+          if (destinationLower.includes(routeTerminus)) {
+            console.log(`🔵 HAMMERSMITH & CITY LINE DEBUG - EXACT TERMINUS MATCH:`, { 
               currentStation, 
               destination, 
               destinationLower,
@@ -3284,6 +3428,37 @@ const districtLineToEdgwareRoad = [
         nextStation: nextStation, 
         duration: duration 
       };
+    }
+    
+    if (lineId === 'hammersmith-city' || lineId === 'hammersmith & city') {
+      // Use unified Hammersmith & City Line routing
+      const nextStation = getUnifiedNextStation(lineId, currentStation, destination);
+      console.log(`HAMMERSMITH & CITY Line Unified Debug:`, {
+        currentStation,
+        rawDestination,
+        extractedDestination: destination,
+        vehicleId: arrival.vehicleId,
+        nextStation: nextStation,
+        lineId: lineId
+      });
+      
+      if (!lineTopology) {
+        return { nextStation: 'Loading...', duration: 'N/A' };
+      }
+      
+      // Calculate duration using the Hammersmith & City Line-determined next station
+      const duration = calculateDynamicDuration(
+        arrivalsData || [], 
+        currentStation, 
+        nextStation, 
+        lineId,
+        arrival.vehicleId
+      );
+      
+      return { 
+        nextStation: nextStation, 
+        duration: duration 
+      };
     } else {
       // For other lines, determine direction based on destination
       if (lineId === 'northern') {
@@ -3596,6 +3771,33 @@ const districtLineToEdgwareRoad = [
                                destinationLower.includes('ealing broadway') || 
                                destinationLower.includes('barking') || 
                                destinationLower.includes('tower hill') || 
+                               destinationLower.includes('edgware road');
+                      }
+                      
+                      // Hammersmith & City Line: Only show entries with correct stations and destinations
+                      if (lineId === 'hammersmith-city' || lineId === 'hammersmith & city') {
+                        // Filter out stations that don't belong to H&C Line
+                        const hcStations = [
+                          'hammersmith', 'goldhawk road', 'shepherd\'s bush market', 'wood lane',
+                          'latimer road', 'ladbroke grove', 'westbourne park', 'royal oak',
+                          'paddington', 'edgware road', 'baker street', 'great portland street',
+                          'euston square', 'king\'s cross st. pancras', 'farringdon', 'barbican',
+                          'moorgate', 'liverpool street', 'aldgate east', 'whitechapel',
+                          'stepney green', 'mile end', 'bow road', 'bromley-by-bow',
+                          'west ham', 'plaistow', 'upton park', 'east ham', 'barking'
+                        ];
+                        
+                        const isCorrectStation = hcStations.some(station => 
+                          stationNameLower.includes(station)
+                        );
+                        
+                        if (!isCorrectStation) {
+                          return false;
+                        }
+                        
+                        // Only allow the 3 main destinations
+                        return destinationLower.includes('hammersmith') || 
+                               destinationLower.includes('barking') || 
                                destinationLower.includes('edgware road');
                       }
                       

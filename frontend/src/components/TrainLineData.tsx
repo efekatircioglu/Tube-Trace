@@ -658,6 +658,7 @@ export default function TrainLineData() {
     "Barking": ["East Ham"]
   };
   const jubileeLineRoadmap: { [key: string]: string[] } = {
+    // Full stretch: Stanmore → Stratford
     "Stanmore": ["Canons Park"],
     "Canons Park": ["Stanmore", "Queensbury"],
     "Queensbury": ["Canons Park", "Kingsbury"],
@@ -668,7 +669,7 @@ export default function TrainLineData() {
     "Willesden Green": ["Dollis Hill", "Kilburn"],
     "Kilburn": ["Willesden Green", "West Hampstead"],
     "West Hampstead": ["Kilburn", "Finchley Road"],
-    "Finchley Road": ["West Hampstead", "Wembley Park"], // note: some interleaving between Finchley Road / Swiss Cottage area
+    "Finchley Road": ["West Hampstead", "Swiss Cottage"],
     "Swiss Cottage": ["Finchley Road", "St. John's Wood"],
     "St. John's Wood": ["Swiss Cottage", "Baker Street"],
     "Baker Street": ["St. John's Wood", "Bond Street"],
@@ -680,12 +681,11 @@ export default function TrainLineData() {
     "London Bridge": ["Southwark", "Bermondsey"],
     "Bermondsey": ["London Bridge", "Canada Water"],
     "Canada Water": ["Bermondsey", "Canary Wharf"],
-    "Canary Wharf": ["Canada Water", "West Silvertown"],
-    "West Silvertown": ["Canary Wharf", "Pontoon Dock"],
-    "Pontoon Dock": ["West Silvertown", "Canning Town"],
-    "Canning Town": ["Pontoon Dock", "Stratford"],
-    "Stratford": ["Canning Town", "North Greenwich"],
-    "North Greenwich": ["Stratford", "Canning Town", "???"] // core extension patterns handled as Stratford ↔ North Greenwich ↔ Canning Town
+    "Canary Wharf": ["Canada Water", "North Greenwich"],
+    "North Greenwich": ["Canary Wharf", "Canning Town"],
+    "Canning Town": ["North Greenwich", "West Ham"],
+    "West Ham": ["Canning Town", "Stratford"],
+    "Stratford": ["West Ham"]
   };
   const metropolitanLineRoadmap: { [key: string]: string[] } = {
     "Aldgate": ["Liverpool Street"],
@@ -2011,6 +2011,99 @@ export default function TrainLineData() {
             station.toLowerCase().includes('wood lane') ||
             station.toLowerCase().includes('shepherd') ||
             station.toLowerCase().includes('goldhawk')
+          ) || possibleNextStations[possibleNextStations.length - 1];
+        }
+        
+      case 'jubilee':
+        // Jubilee Line logic - straight line from Stanmore to Stratford
+        console.log(`🔵 JUBILEE LINE INTELLIGENT LOGIC:`, { 
+          currentStation, 
+          destination, 
+          destinationLower,
+          possibleNextStations
+        });
+        
+        // Define the full Jubilee Line sequence
+        const jubileeSequence = [
+          "Stanmore", "Canons Park", "Queensbury", "Kingsbury", "Wembley Park",
+          "Neasden", "Dollis Hill", "Willesden Green", "Kilburn", "West Hampstead",
+          "Finchley Road", "Swiss Cottage", "St. John's Wood", "Baker Street",
+          "Bond Street", "Green Park", "Westminster", "Waterloo", "Southwark",
+          "London Bridge", "Bermondsey", "Canada Water", "Canary Wharf",
+          "North Greenwich", "Canning Town", "West Ham", "Stratford"
+        ];
+        
+        // Find current station position in sequence
+        const currentIndex = jubileeSequence.findIndex(station => 
+          station.toLowerCase() === currentStation.toLowerCase()
+        );
+        
+        if (currentIndex === -1) {
+          console.log(`🔵 JUBILEE LINE: Current station not found in sequence`);
+          return possibleNextStations[0]; // Fallback
+        }
+        
+        // Determine direction based on destination
+        if (destinationLower.includes('stanmore')) {
+          // Going towards Stanmore (northbound) - go backwards in sequence
+          console.log(`🔵 JUBILEE LINE: Going towards Stanmore (northbound)`);
+          return possibleNextStations.find(station => 
+            jubileeSequence[currentIndex - 1] && 
+            jubileeSequence[currentIndex - 1].toLowerCase() === station.toLowerCase()
+          ) || possibleNextStations[0];
+        } else if (destinationLower.includes('stratford')) {
+          // Going towards Stratford (eastbound) - go forwards in sequence
+          console.log(`🔵 JUBILEE LINE: Going towards Stratford (eastbound)`);
+          return possibleNextStations.find(station => 
+            jubileeSequence[currentIndex + 1] && 
+            jubileeSequence[currentIndex + 1].toLowerCase() === station.toLowerCase()
+          ) || possibleNextStations[possibleNextStations.length - 1];
+        } else if (destinationLower.includes('willesden green')) {
+          // Going towards Willesden Green (short turn) - determine direction
+          const willesdenIndex = jubileeSequence.findIndex(station => 
+            station.toLowerCase().includes('willesden green')
+          );
+          if (currentIndex < willesdenIndex) {
+            // Going towards Willesden Green (eastbound)
+            console.log(`🔵 JUBILEE LINE: Going towards Willesden Green (eastbound)`);
+            return possibleNextStations.find(station => 
+              jubileeSequence[currentIndex + 1] && 
+              jubileeSequence[currentIndex + 1].toLowerCase() === station.toLowerCase()
+            ) || possibleNextStations[possibleNextStations.length - 1];
+          } else {
+            // Going towards Willesden Green (westbound)
+            console.log(`🔵 JUBILEE LINE: Going towards Willesden Green (westbound)`);
+            return possibleNextStations.find(station => 
+              jubileeSequence[currentIndex - 1] && 
+              jubileeSequence[currentIndex - 1].toLowerCase() === station.toLowerCase()
+            ) || possibleNextStations[0];
+          }
+        } else if (destinationLower.includes('wembley park')) {
+          // Going towards Wembley Park (short turn) - determine direction
+          const wembleyIndex = jubileeSequence.findIndex(station => 
+            station.toLowerCase().includes('wembley park')
+          );
+          if (currentIndex < wembleyIndex) {
+            // Going towards Wembley Park (eastbound)
+            console.log(`🔵 JUBILEE LINE: Going towards Wembley Park (eastbound)`);
+            return possibleNextStations.find(station => 
+              jubileeSequence[currentIndex + 1] && 
+              jubileeSequence[currentIndex + 1].toLowerCase() === station.toLowerCase()
+            ) || possibleNextStations[possibleNextStations.length - 1];
+          } else {
+            // Going towards Wembley Park (westbound)
+            console.log(`🔵 JUBILEE LINE: Going towards Wembley Park (westbound)`);
+            return possibleNextStations.find(station => 
+              jubileeSequence[currentIndex - 1] && 
+              jubileeSequence[currentIndex - 1].toLowerCase() === station.toLowerCase()
+            ) || possibleNextStations[0];
+          }
+        } else {
+          // Default: most trains go towards Stratford
+          console.log(`🔵 JUBILEE LINE: Default direction towards Stratford`);
+          return possibleNextStations.find(station => 
+            jubileeSequence[currentIndex + 1] && 
+            jubileeSequence[currentIndex + 1].toLowerCase() === station.toLowerCase()
           ) || possibleNextStations[possibleNextStations.length - 1];
         }
         
@@ -3822,6 +3915,33 @@ const districtLineToEdgwareRoad = [
                                destinationLower.includes('hainault') || 
                                destinationLower.includes('newbury park') || 
                                destinationLower.includes('grange hill');
+                      }
+                      
+                      // Jubilee Line: Only show entries with correct stations and destinations
+                      if (lineId === 'jubilee') {
+                        // Filter out stations that don't belong to Jubilee Line
+                        const jubileeStations = [
+                          'stanmore', 'canons park', 'queensbury', 'kingsbury', 'wembley park',
+                          'neasden', 'dollis hill', 'willesden green', 'kilburn', 'west hampstead',
+                          'finchley road', 'swiss cottage', 'st. john\'s wood', 'baker street',
+                          'bond street', 'green park', 'westminster', 'waterloo', 'southwark',
+                          'london bridge', 'bermondsey', 'canada water', 'canary wharf',
+                          'north greenwich', 'canning town', 'west ham', 'stratford'
+                        ];
+                        
+                        const isCorrectStation = jubileeStations.some(station => 
+                          stationNameLower.includes(station)
+                        );
+                        
+                        if (!isCorrectStation) {
+                          return false;
+                        }
+                        
+                        // Only allow main destinations
+                        return destinationLower.includes('stanmore') || 
+                               destinationLower.includes('stratford') || 
+                               destinationLower.includes('willesden green') || 
+                               destinationLower.includes('wembley park');
                       }
                       
                       // For other lines, show all arrivals

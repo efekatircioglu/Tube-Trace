@@ -127,10 +127,13 @@ export default function TrainLineData() {
       ]);
       
       setStatusData(statusData);
-      setArrivalsData(arrivalsData);
+      
+      // Filter out duplicate train entries before setting the data
+      const filteredArrivals = filterDuplicateTrains(arrivalsData);
+      setArrivalsData(filteredArrivals);
       
       // Fetch crowding data for all stations
-      await fetchCrowdingData(arrivalsData);
+      await fetchCrowdingData(filteredArrivals);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
@@ -201,6 +204,46 @@ export default function TrainLineData() {
     }
   };
 
+  // Function to filter out duplicate train entries (same vehicle ID at same station)
+  const filterDuplicateTrains = (arrivalsData: Arrival[]): Arrival[] => {
+    const seen = new Map<string, Arrival>();
+    const filtered: Arrival[] = [];
+    
+    arrivalsData.forEach(arrival => {
+      if (!arrival.vehicleId) {
+        // Keep entries without vehicle ID (they can't be duplicates)
+        filtered.push(arrival);
+        return;
+      }
+      
+      // Create a unique key: vehicleId + stationName + lineId
+      const key = `${arrival.vehicleId}-${arrival.stationName}-${arrival.lineId}`;
+      
+      if (!seen.has(key)) {
+        // First time seeing this train at this station
+        seen.set(key, arrival);
+        filtered.push(arrival);
+      } else {
+        // Duplicate found - keep the one with the earliest arrival time
+        const existing = seen.get(key)!;
+        const existingTime = new Date(existing.expectedArrival).getTime();
+        const currentTime = new Date(arrival.expectedArrival).getTime();
+        
+        if (currentTime < existingTime) {
+          // Current arrival is earlier, replace the existing one
+          const existingIndex = filtered.findIndex(a => a === existing);
+          if (existingIndex !== -1) {
+            filtered[existingIndex] = arrival;
+            seen.set(key, arrival);
+          }
+        }
+        // If existing arrival is earlier or same time, keep the existing one
+      }
+    });
+    
+    return filtered;
+  };
+
   const countUniqueTrainsPerLine = (arrivalsData: Arrival[]) => {
     const trainCounts: Record<string, number> = {};
     
@@ -240,6 +283,11 @@ export default function TrainLineData() {
     currentVehicleId: string
   ): string => {
     if (nextStation === 'Terminal') {
+      return 'N/A';
+    }
+    
+    // Handle undefined or null nextStation
+    if (!nextStation || nextStation === 'Unknown') {
       return 'N/A';
     }
 
@@ -688,33 +736,49 @@ export default function TrainLineData() {
     "Stratford": ["West Ham"]
   };
   const metropolitanLineRoadmap: { [key: string]: string[] } = {
+    // Core route: Harrow-on-the-Hill → Aldgate
+    "Harrow-on-the-Hill": ["Northwick Park", "North Harrow", "West Harrow"],
+    "Northwick Park": ["Harrow-on-the-Hill", "Preston Road"],
+    "Preston Road": ["Northwick Park", "Wembley Park"],
+    "Wembley Park": ["Preston Road", "Finchley Road"],
+    "Finchley Road": ["Wembley Park", "Baker Street"],
+    "Baker Street": ["Finchley Road", "Great Portland Street"],
+    "Great Portland Street": ["Baker Street", "Euston Square"],
+    "Euston Square": ["Great Portland Street", "King's Cross St. Pancras"],
+    "King's Cross St. Pancras": ["Euston Square", "Farringdon"],
+    "Farringdon": ["King's Cross St. Pancras", "Barbican"],
+    "Barbican": ["Farringdon", "Moorgate"],
+    "Moorgate": ["Barbican", "Liverpool Street"],
+    "Liverpool Street": ["Moorgate", "Aldgate"],
     "Aldgate": ["Liverpool Street"],
-    "Liverpool Street": ["Aldgate", "Moorgate"],
-    "Moorgate": ["Liverpool Street", "Barbican"],
-    "Barbican": ["Moorgate", "Farringdon"],
-    "Farringdon": ["Barbican", "King's Cross St. Pancras"],
-    "King's Cross St. Pancras": ["Farringdon", "Euston Square"],
-    "Euston Square": ["King's Cross St. Pancras", "Great Portland Street"],
-    "Great Portland Street": ["Euston Square", "Baker Street"],
-    "Baker Street": ["Great Portland Street", "Finchley Road"],
-    "Finchley Road": ["Baker Street", "Wembley Park"],
-    "Wembley Park": ["Finchley Road", "Neasden"],
-    "Neasden": ["Wembley Park", "Northwick Park"],
-    "Northwick Park": ["Neasden", "Harrow-on-the-Hill"],
-    "Harrow-on-the-Hill": ["Northwick Park", "North Harrow"],
+    
+    // Amersham branch
     "North Harrow": ["Harrow-on-the-Hill", "Pinner"],
     "Pinner": ["North Harrow", "Northwood Hills"],
     "Northwood Hills": ["Pinner", "Northwood"],
     "Northwood": ["Northwood Hills", "Moor Park"],
-    "Moor Park": ["Northwood", "Croxley"],
+    "Moor Park": ["Northwood", "Rickmansworth", "Croxley"],
+    "Rickmansworth": ["Moor Park", "Chorleywood"],
+    "Chorleywood": ["Rickmansworth", "Chalfont & Latimer"],
+    "Chalfont & Latimer": ["Chorleywood", "Amersham", "Chesham"],
+    "Amersham": ["Chalfont & Latimer"],
+    
+    // Chesham branch
+    "Chesham": ["Chalfont & Latimer"],
+    
+    // Watford branch
     "Croxley": ["Moor Park", "Watford"],
     "Watford": ["Croxley"],
-    "Rickmansworth": ["Chorleywood", "Moor Park"],
-    "Chorleywood": ["Rickmansworth", "Chalfont & Latimer"],
-    "Chalfont & Latimer": ["Chorleywood", "Chesham"],
-    "Chesham": ["Chalfont & Latimer"],
-    "Amersham": ["Chalfont & Latimer"], // expresses the far branches (Amersham/Chesham/Watford/Uxbridge) — adjacency varies by branch
-    "Uxbridge": ["Harrow-on-the-Hill"] // Uxbridge branch meets the core around Harrow-on-the-Hill / Rayners Lane area (service pattern aware)
+    
+    // Uxbridge branch
+    "West Harrow": ["Harrow-on-the-Hill", "Rayners Lane"],
+    "Rayners Lane": ["West Harrow", "Eastcote"],
+    "Eastcote": ["Rayners Lane", "Ruislip Manor"],
+    "Ruislip Manor": ["Eastcote", "Ruislip"],
+    "Ruislip": ["Ruislip Manor", "Ickenham"],
+    "Ickenham": ["Ruislip", "Hillingdon"],
+    "Hillingdon": ["Ickenham", "Uxbridge"],
+    "Uxbridge": ["Hillingdon"]
   };
   const piccadillyLineRoadmap: { [key: string]: string[] } = {
     /* Eastern terminus Cockfosters; western branches to Uxbridge and Heathrow (via Acton Town split). */
@@ -1348,7 +1412,378 @@ export default function TrainLineData() {
   // };
   
   // Unified function to get next station for any line
+  // Helper function to check if current station matches destination (with variations)
+  const isFinalDestination = (currentStation: string, destination: string): boolean => {
+    const currentLower = currentStation.toLowerCase().replace(/[-\s\.]/g, '');
+    const destinationLower = destination.toLowerCase().replace(/[-\s\.]/g, '');
+    
+    // Direct match
+    if (currentLower === destinationLower) {
+      return true;
+    }
+    
+    // Handle common variations and synonyms
+    const stationVariations: { [key: string]: string[] } = {
+      // King's Cross variations
+      'kingscrossstpancras': ['kings cross st pancras', 'kings cross', 'st pancras', 'kings cross st. pancras'],
+      'kingscross': ['kings cross st pancras', 'kings cross', 'st pancras', 'kings cross st. pancras'],
+      'stpancras': ['kings cross st pancras', 'kings cross', 'st pancras', 'kings cross st. pancras'],
+      
+      // Paddington variations
+      'paddington': ['paddington station', 'paddington main line'],
+      
+      // Baker Street variations
+      'bakerstreet': ['baker street', 'baker st'],
+      
+      // Edgware Road variations
+      'edgwareroad': ['edgware road', 'edgware road circle line', 'edgware road hammersmith city'],
+      
+      // Liverpool Street variations
+      'liverpoolstreet': ['liverpool street', 'liverpool st'],
+      
+      // Euston variations
+      'euston': ['euston station', 'euston main line'],
+      
+      // Waterloo variations
+      'waterloo': ['waterloo station', 'waterloo main line'],
+      
+      // Charing Cross variations
+      'charingcross': ['charing cross', 'charing cross station'],
+      
+      // Leicester Square variations
+      'leicestersquare': ['leicester square', 'leicester sq'],
+      
+      // Tottenham Court Road variations
+      'tottenhamcourtroad': ['tottenham court road', 'tottenham court rd'],
+      
+      // Goodge Street variations
+      'goodgestreet': ['goodge street', 'goodge st'],
+      
+      // Warren Street variations
+      'warrenstreet': ['warren street', 'warren st'],
+      
+      // Mornington Crescent variations
+      'morningtoncrescent': ['mornington crescent', 'mornington cres'],
+      
+      // Camden Town variations
+      'camdentown': ['camden town', 'camden'],
+      
+      // Kentish Town variations
+      'kentishtown': ['kentish town', 'kentish'],
+      
+      // Tufnell Park variations
+      'tufnellpark': ['tufnell park', 'tufnell pk'],
+      
+      // Archway variations
+      'archway': ['archway station'],
+      
+      // Highgate variations
+      'highgate': ['highgate station'],
+      
+      // East Finchley variations
+      'eastfinchley': ['east finchley', 'e finchley'],
+      
+      // Finchley Central variations
+      'finchleycentral': ['finchley central', 'finchley ctrl'],
+      
+      // West Finchley variations
+      'westfinchley': ['west finchley', 'w finchley'],
+      
+      // Woodside Park variations
+      'woodsidepark': ['woodside park', 'woodside pk'],
+      
+      // Totteridge & Whetstone variations
+      'totteridgewhetstone': ['totteridge & whetstone', 'totteridge and whetstone', 'totteridge whetstone'],
+      
+      // High Barnet variations
+      'highbarnet': ['high barnet', 'barnet'],
+      
+      // Mill Hill East variations
+      'millhilleast': ['mill hill east', 'mill hill e'],
+      
+      // Chalk Farm variations
+      'chalkfarm': ['chalk farm', 'chalk frm'],
+      
+      // Belsize Park variations
+      'belsizepark': ['belsize park', 'belsize pk'],
+      
+      // Hampstead variations
+      'hampstead': ['hampstead station'],
+      
+      // Golders Green variations
+      'goldersgreen': ['golders green', 'golders grn'],
+      
+      // Brent Cross variations
+      'brentcross': ['brent cross', 'brent x'],
+      
+      // Hendon Central variations
+      'hendoncentral': ['hendon central', 'hendon ctrl'],
+      
+      // Colindale variations
+      'colindale': ['colindale station'],
+      
+      // Burnt Oak variations
+      'burntoak': ['burnt oak', 'burnt ok'],
+      
+      // Edgware variations
+      'edgware': ['edgware station'],
+      
+      // Morden variations
+      'morden': ['morden station'],
+      
+      // South Wimbledon variations
+      'southwimbledon': ['south wimbledon', 's wimbledon'],
+      
+      // Colliers Wood variations
+      'collierswood': ['colliers wood', 'colliers wd'],
+      
+      // Tooting Broadway variations
+      'tootingbroadway': ['tooting broadway', 'tooting bway'],
+      
+      // Tooting Bec variations
+      'tootingbec': ['tooting bec', 'tooting b'],
+      
+      // Balham variations
+      'balham': ['balham station'],
+      
+      // Clapham South variations
+      'claphamsouth': ['clapham south', 'clapham s'],
+      
+      // Clapham Common variations
+      'claphamcommon': ['clapham common', 'clapham c'],
+      
+      // Clapham North variations
+      'claphamnorth': ['clapham north', 'clapham n'],
+      
+      // Stockwell variations
+      'stockwell': ['stockwell station'],
+      
+      // Oval variations
+      'oval': ['oval station'],
+      
+      // Kennington variations
+      'kennington': ['kennington station'],
+      
+      // Nine Elms variations
+      'nineelms': ['nine elms', 'nine elms station'],
+      
+      // Battersea Power Station variations
+      'batterseapowerstation': ['battersea power station', 'battersea power stn', 'battersea ps'],
+      
+      // Elephant & Castle variations
+      'elephantcastle': ['elephant & castle', 'elephant and castle', 'elephant castle'],
+      
+      // Borough variations
+      'borough': ['borough station'],
+      
+      // London Bridge variations
+      'londonbridge': ['london bridge', 'london br'],
+      
+      // Bank variations
+      'bank': ['bank station', 'bank underground'],
+      
+      // Moorgate variations
+      'moorgate': ['moorgate station'],
+      
+      // Old Street variations
+      'oldstreet': ['old street', 'old st'],
+      
+      // Angel variations
+      'angel': ['angel station'],
+      
+      // Embankment variations
+      'embankment': ['embankment station'],
+      
+      // Harrow-on-the-Hill variations
+      'harrowonthehill': ['harrow-on-the-hill', 'harrow on the hill', 'harrow on hill', 'harrow hill'],
+      
+      // North Harrow variations
+      'northharrow': ['north harrow', 'n harrow'],
+      
+      // Pinner variations
+      'pinner': ['pinner station'],
+      
+      // Northwood Hills variations
+      'northwoodhills': ['northwood hills', 'northwood hls'],
+      
+      // Northwood variations
+      'northwood': ['northwood station'],
+      
+      // Moor Park variations
+      'moorpark': ['moor park', 'moor pk'],
+      
+      // Rickmansworth variations
+      'rickmansworth': ['rickmansworth station'],
+      
+      // Chorleywood variations
+      'chorleywood': ['chorleywood station'],
+      
+      // Chalfont & Latimer variations
+      'chalfontlatimer': ['chalfont & latimer', 'chalfont and latimer', 'chalfont latimer'],
+      
+      // Chesham variations
+      'chesham': ['chesham station'],
+      
+      // Amersham variations
+      'amersham': ['amersham station'],
+      
+      // Croxley variations
+      'croxley': ['croxley station'],
+      
+      // Watford variations
+      'watford': ['watford station'],
+      
+      // West Harrow variations
+      'westharrow': ['west harrow', 'w harrow'],
+      
+      // Rayners Lane variations
+      'raynerslane': ['rayners lane', 'rayners ln'],
+      
+      // Eastcote variations
+      'eastcote': ['eastcote station'],
+      
+      // Ruislip Manor variations
+      'ruislipmanor': ['ruislip manor', 'ruislip mnr'],
+      
+      // Ruislip variations
+      'ruislip': ['ruislip station'],
+      
+      // Ickenham variations
+      'ickenham': ['ickenham station'],
+      
+      // Hillingdon variations
+      'hillingdon': ['hillingdon station'],
+      
+      // Uxbridge variations
+      'uxbridge': ['uxbridge station'],
+      
+      // Aldgate variations
+      'aldgate': ['aldgate station'],
+      
+      // Barbican variations
+      'barbican': ['barbican station'],
+      
+      // Farringdon variations
+      'farringdon': ['farringdon station'],
+      
+      // Euston Square variations
+      'eustonsquare': ['euston square', 'euston sq'],
+      
+      // Great Portland Street variations
+      'greatportlandstreet': ['great portland street', 'great portland st'],
+      
+      // Finchley Road variations
+      'finchleyroad': ['finchley road', 'finchley rd'],
+      
+      // Wembley Park variations
+      'wembleypark': ['wembley park', 'wembley pk'],
+      
+      // Preston Road variations
+      'prestonroad': ['preston road', 'preston rd'],
+      
+      // Northwick Park variations
+      'northwickpark': ['northwick park', 'northwick pk'],
+      
+      // Stanmore variations
+      'stanmore': ['stanmore station'],
+      
+      // Canons Park variations
+      'canonspark': ['canons park', 'canons pk'],
+      
+      // Queensbury variations
+      'queensbury': ['queensbury station'],
+      
+      // Kingsbury variations
+      'kingsbury': ['kingsbury station'],
+      
+      // Neasden variations
+      'neasden': ['neasden station'],
+      
+      // Dollis Hill variations
+      'dollishill': ['dollis hill', 'dollis h'],
+      
+      // Willesden Green variations
+      'willesdengreen': ['willesden green', 'willesden grn'],
+      
+      // Kilburn variations
+      'kilburn': ['kilburn station'],
+      
+      // West Hampstead variations
+      'westhampstead': ['west hampstead', 'w hampstead'],
+      
+      // Swiss Cottage variations
+      'swisscottage': ['swiss cottage', 'swiss ctt'],
+      
+      // St. John's Wood variations
+      'stjohnswood': ['st. john\'s wood', 'st johns wood', 'st john\'s wood'],
+      
+      // Bond Street variations
+      'bondstreet': ['bond street', 'bond st'],
+      
+      // Green Park variations
+      'greenpark': ['green park', 'green pk'],
+      
+      // Westminster variations
+      'westminster': ['westminster station'],
+      
+      // Southwark variations
+      'southwark': ['southwark station'],
+      
+      // Bermondsey variations
+      'bermondsey': ['bermondsey station'],
+      
+      // Canada Water variations
+      'canadawater': ['canada water', 'canada wtr'],
+      
+      // Canary Wharf variations
+      'canarywharf': ['canary wharf', 'canary whf'],
+      
+      // North Greenwich variations
+      'northgreenwich': ['north greenwich', 'n greenwich'],
+      
+      // Canning Town variations
+      'canningtown': ['canning town', 'canning tn'],
+      
+      // West Ham variations
+      'westham': ['west ham', 'w ham'],
+      
+      // Stratford variations
+      'stratford': ['stratford station'],
+    };
+    
+    // Check if current station matches any variation of the destination
+    for (const [key, variations] of Object.entries(stationVariations)) {
+      if (currentLower.includes(key) || key.includes(currentLower)) {
+        for (const variation of variations) {
+          if (destinationLower.includes(variation.replace(/[-\s\.]/g, '')) || 
+              variation.replace(/[-\s\.]/g, '').includes(destinationLower)) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    // Check if destination matches any variation of the current station
+    for (const [key, variations] of Object.entries(stationVariations)) {
+      if (destinationLower.includes(key) || key.includes(destinationLower)) {
+        for (const variation of variations) {
+          if (currentLower.includes(variation.replace(/[-\s\.]/g, '')) || 
+              variation.replace(/[-\s\.]/g, '').includes(currentLower)) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    return false;
+  };
+
   const getUnifiedNextStation = (lineId: string, currentStation: string, destination: string): string => {
+    // Check if current station is the final destination
+    if (isFinalDestination(currentStation, destination)) {
+      return 'Final Destination';
+    }
+    
     const destinationLower = destination.toLowerCase();
     const currentStationLower = currentStation.toLowerCase();
     
@@ -1365,6 +1800,15 @@ export default function TrainLineData() {
       case 'hammersmith & city':
         lineData = hammersmithCityLineData;
         break;
+      case 'jubilee':
+        // Use intelligent selection for Jubilee Line
+        return selectNextStationIntelligently(lineId, currentStation, destination, []);
+      case 'metropolitan':
+        // Use intelligent selection for Metropolitan Line
+        return selectNextStationIntelligently(lineId, currentStation, destination, []);
+      case 'northern':
+        // Use intelligent selection for Northern Line
+        return selectNextStationIntelligently(lineId, currentStation, destination, []);
       default:
         return 'Unknown'; // Line not supported yet
     }
@@ -2016,12 +2460,6 @@ export default function TrainLineData() {
         
       case 'jubilee':
         // Jubilee Line logic - straight line from Stanmore to Stratford
-        console.log(`🔵 JUBILEE LINE INTELLIGENT LOGIC:`, { 
-          currentStation, 
-          destination, 
-          destinationLower,
-          possibleNextStations
-        });
         
         // Define the full Jubilee Line sequence
         const jubileeSequence = [
@@ -2039,72 +2477,277 @@ export default function TrainLineData() {
         );
         
         if (currentIndex === -1) {
-          console.log(`🔵 JUBILEE LINE: Current station not found in sequence`);
-          return possibleNextStations[0]; // Fallback
+          return 'Unknown'; // Fallback
         }
         
         // Determine direction based on destination
         if (destinationLower.includes('stanmore')) {
           // Going towards Stanmore (northbound) - go backwards in sequence
-          console.log(`🔵 JUBILEE LINE: Going towards Stanmore (northbound)`);
-          return possibleNextStations.find(station => 
-            jubileeSequence[currentIndex - 1] && 
-            jubileeSequence[currentIndex - 1].toLowerCase() === station.toLowerCase()
-          ) || possibleNextStations[0];
+          return jubileeSequence[currentIndex - 1] || 'Unknown';
         } else if (destinationLower.includes('stratford')) {
           // Going towards Stratford (eastbound) - go forwards in sequence
-          console.log(`🔵 JUBILEE LINE: Going towards Stratford (eastbound)`);
-          return possibleNextStations.find(station => 
-            jubileeSequence[currentIndex + 1] && 
-            jubileeSequence[currentIndex + 1].toLowerCase() === station.toLowerCase()
-          ) || possibleNextStations[possibleNextStations.length - 1];
+          return jubileeSequence[currentIndex + 1] || 'Unknown';
         } else if (destinationLower.includes('willesden green')) {
-          // Going towards Willesden Green (short turn) - determine direction
-          const willesdenIndex = jubileeSequence.findIndex(station => 
-            station.toLowerCase().includes('willesden green')
-          );
+          // Short turn at Willesden Green
+          const willesdenIndex = jubileeSequence.findIndex(s => s.toLowerCase().includes('willesden green'));
           if (currentIndex < willesdenIndex) {
-            // Going towards Willesden Green (eastbound)
-            console.log(`🔵 JUBILEE LINE: Going towards Willesden Green (eastbound)`);
-            return possibleNextStations.find(station => 
-              jubileeSequence[currentIndex + 1] && 
-              jubileeSequence[currentIndex + 1].toLowerCase() === station.toLowerCase()
-            ) || possibleNextStations[possibleNextStations.length - 1];
+            return jubileeSequence[currentIndex + 1] || 'Unknown';
           } else {
-            // Going towards Willesden Green (westbound)
-            console.log(`🔵 JUBILEE LINE: Going towards Willesden Green (westbound)`);
-            return possibleNextStations.find(station => 
-              jubileeSequence[currentIndex - 1] && 
-              jubileeSequence[currentIndex - 1].toLowerCase() === station.toLowerCase()
-            ) || possibleNextStations[0];
+            return jubileeSequence[currentIndex - 1] || 'Unknown';
           }
         } else if (destinationLower.includes('wembley park')) {
-          // Going towards Wembley Park (short turn) - determine direction
-          const wembleyIndex = jubileeSequence.findIndex(station => 
-            station.toLowerCase().includes('wembley park')
-          );
+          // Short turn at Wembley Park
+          const wembleyIndex = jubileeSequence.findIndex(s => s.toLowerCase().includes('wembley park'));
           if (currentIndex < wembleyIndex) {
-            // Going towards Wembley Park (eastbound)
-            console.log(`🔵 JUBILEE LINE: Going towards Wembley Park (eastbound)`);
-            return possibleNextStations.find(station => 
-              jubileeSequence[currentIndex + 1] && 
-              jubileeSequence[currentIndex + 1].toLowerCase() === station.toLowerCase()
-            ) || possibleNextStations[possibleNextStations.length - 1];
+            return jubileeSequence[currentIndex + 1] || 'Unknown';
           } else {
-            // Going towards Wembley Park (westbound)
-            console.log(`🔵 JUBILEE LINE: Going towards Wembley Park (westbound)`);
-            return possibleNextStations.find(station => 
-              jubileeSequence[currentIndex - 1] && 
-              jubileeSequence[currentIndex - 1].toLowerCase() === station.toLowerCase()
-            ) || possibleNextStations[0];
+            return jubileeSequence[currentIndex - 1] || 'Unknown';
           }
         } else {
-          // Default: most trains go towards Stratford
-          console.log(`🔵 JUBILEE LINE: Default direction towards Stratford`);
-          return possibleNextStations.find(station => 
-            jubileeSequence[currentIndex + 1] && 
-            jubileeSequence[currentIndex + 1].toLowerCase() === station.toLowerCase()
-          ) || possibleNextStations[possibleNextStations.length - 1];
+          // Default: continue towards Stratford (eastbound)
+          return jubileeSequence[currentIndex + 1] || 'Unknown';
+        }
+        
+      case 'metropolitan':
+        // Metropolitan Line logic - multiple branches and destinations
+        
+        // Define all Metropolitan Line routes
+        // MAIN ROUTE: Aldgate ↔ Amersham (core route)
+        const metropolitanCore = [
+          "Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon",
+          "King's Cross St. Pancras", "Euston Square", "Great Portland Street",
+          "Baker Street", "Finchley Road", "Wembley Park", "Preston Road",
+          "Northwick Park", "Harrow-on-the-Hill", "North Harrow", "Pinner",
+          "Northwood Hills", "Northwood", "Moor Park", "Rickmansworth",
+          "Chorleywood", "Chalfont & Latimer", "Amersham"
+        ];
+        
+        // CHESHAM BRANCH: Follows main route until Chalfont & Latimer, then branches to Chesham
+        const metropolitanToChesham = [
+          "Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon",
+          "King's Cross St. Pancras", "Euston Square", "Great Portland Street",
+          "Baker Street", "Finchley Road", "Wembley Park", "Preston Road",
+          "Northwick Park", "Harrow-on-the-Hill", "North Harrow", "Pinner",
+          "Northwood Hills", "Northwood", "Moor Park", "Rickmansworth",
+          "Chorleywood", "Chalfont & Latimer", "Chesham"
+        ];
+        
+        // WATFORD BRANCH: Follows main route until Moor Park, then branches to Watford
+        const metropolitanToWatford = [
+          "Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon",
+          "King's Cross St. Pancras", "Euston Square", "Great Portland Street",
+          "Baker Street", "Finchley Road", "Wembley Park", "Preston Road",
+          "Northwick Park", "Harrow-on-the-Hill", "North Harrow", "Pinner",
+          "Northwood Hills", "Northwood", "Moor Park", "Croxley", "Watford"
+        ];
+        
+        // UXBRIDGE BRANCH: Follows main route until Harrow-on-the-Hill, then branches to Uxbridge
+        const metropolitanToUxbridge = [
+          "Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon",
+          "King's Cross St. Pancras", "Euston Square", "Great Portland Street",
+          "Baker Street", "Finchley Road", "Wembley Park", "Preston Road",
+          "Northwick Park", "Harrow-on-the-Hill", "West Harrow", "Rayners Lane",
+          "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"
+        ];
+        
+        // SHORT TURN ROUTES: These terminate early on the main route
+        const metropolitanToBakerStreet = [
+          "Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon",
+          "King's Cross St. Pancras", "Euston Square", "Great Portland Street", "Baker Street"
+        ];
+        
+        const metropolitanToHarrowOnTheHill = [
+          "Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon",
+          "King's Cross St. Pancras", "Euston Square", "Great Portland Street",
+          "Baker Street", "Finchley Road", "Wembley Park", "Preston Road",
+          "Northwick Park", "Harrow-on-the-Hill"
+        ];
+        
+        // Determine which route to use based on destination
+        let activeRoute = metropolitanCore; // Default route
+        
+        if (destinationLower.includes('amersham')) {
+          activeRoute = metropolitanCore; // Main route to Amersham
+        } else if (destinationLower.includes('chesham')) {
+          activeRoute = metropolitanToChesham;
+        } else if (destinationLower.includes('watford')) {
+          activeRoute = metropolitanToWatford;
+        } else if (destinationLower.includes('uxbridge')) {
+          activeRoute = metropolitanToUxbridge;
+        } else if (destinationLower.includes('baker street')) {
+          // For Baker Street destinations, use core route (not the short turn route)
+          activeRoute = metropolitanCore;
+        } else if (destinationLower.includes('harrow')) {
+          // For Harrow destinations, use core route (not the short turn route)
+          activeRoute = metropolitanCore;
+        } else if (destinationLower.includes('aldgate')) {
+          activeRoute = metropolitanCore;
+        } else if (destinationLower.includes('check front') || destinationLower.includes('front of train')) {
+          // For "Check Front of Train" destinations, use core route as default
+          activeRoute = metropolitanCore;
+        }
+        
+        // Special case: if current station is terminal and destination is the same, return Unknown
+        if (currentStation.toLowerCase().replace(/[-\s]/g, '') === destinationLower.replace(/[-\s]/g, '')) {
+          return 'Unknown';
+        }
+        
+        // Find current station position in the active route
+        // Handle station name variations (e.g., "Harrow On The Hill" vs "Harrow-on-the-Hill")
+        const metropolitanCurrentIndex = activeRoute.findIndex(station => {
+          const stationLower = station.toLowerCase().replace(/[-\s]/g, '');
+          const currentStationLower = currentStation.toLowerCase().replace(/[-\s]/g, '');
+          return stationLower === currentStationLower;
+        });
+        
+        if (metropolitanCurrentIndex === -1) {
+          return 'Unknown'; // Fallback
+        }
+        
+        // Determine next station based on direction
+        // All routes now start from Aldgate and go towards their destinations
+        if (destinationLower.includes('aldgate')) {
+          // Going towards Aldgate (westbound) - go backwards in route
+          return activeRoute[metropolitanCurrentIndex - 1] || 'Unknown';
+        } else {
+          // Going towards any other destination (eastbound) - go forwards in route
+          return activeRoute[metropolitanCurrentIndex + 1] || 'Unknown';
+        }
+        
+      case 'northern':
+        // Northern Line logic - complex branching system
+        
+        // Define all Northern Line routes
+        // SOUTH BRANCH
+        const northernSouth = [
+          "Morden", "South Wimbledon", "Colliers Wood", "Tooting Broadway", "Tooting Bec",
+          "Balham", "Clapham South", "Clapham Common", "Clapham North", "Stockwell",
+          "Oval", "Kennington"
+        ];
+        
+        // BATTersea BRANCH (from Kennington CX branch only)
+        const northernBatterseaBranch = [
+          "Kennington", "Nine Elms", "Battersea Power Station"
+        ];
+        
+        // BANK BRANCH CORE
+        const northernBankCore = [
+          "Kennington", "Elephant & Castle", "Borough", "London Bridge", "Bank",
+          "Moorgate", "Old Street", "Angel", "King's Cross St. Pancras", "Euston"
+        ];
+        
+        // CHARING CROSS BRANCH CORE
+        const northernCXCore = [
+          "Kennington", "Waterloo", "Embankment", "Charing Cross", "Leicester Square",
+          "Tottenham Court Road", "Goodge Street", "Warren Street", "Euston"
+        ];
+        
+        // NORTH CORE (shared after Euston)
+        const northernNorthShared = [
+          "Euston", "Mornington Crescent", "Camden Town"
+        ];
+        
+        // EDGWARE BRANCH
+        const northernToEdgware = [
+          "Camden Town", "Chalk Farm", "Belsize Park", "Hampstead", "Golders Green",
+          "Brent Cross", "Hendon Central", "Colindale", "Burnt Oak", "Edgware"
+        ];
+        
+        // HIGH BARNET BRANCH
+        const northernToHighBarnet = [
+          "Camden Town", "Kentish Town", "Tufnell Park", "Archway", "Highgate",
+          "East Finchley", "Finchley Central", "West Finchley", "Woodside Park",
+          "Totteridge & Whetstone", "High Barnet"
+        ];
+        
+        // MILL HILL EAST SPUR (off Finchley Central)
+        const northernToMillHillEast = [
+          "Finchley Central", "Mill Hill East"
+        ];
+        
+        // Northern Line routing logic - handle shared CX route segment
+        let northernActiveRoute = northernSouth; // Default route
+        
+        // Handle "via CX" and "via Bank" patterns - extract the actual destination
+        const destinationWithoutVia = destinationLower.replace(/\s+via\s+(cx|bank|charing cross|charing cross branch|bank branch)/g, '').trim();
+        
+        // Check if we're on the shared CX route segment (Euston to Kennington)
+        const currentStationLower = currentStation.toLowerCase().replace(/[-\s]/g, '');
+        const isOnCXSegment = northernCXCore.some(s => s.toLowerCase().replace(/[-\s]/g, '') === currentStationLower);
+        
+        // Determine route based on destination and current location
+        if (destinationLower.includes('battersea')) {
+          if (isOnCXSegment) {
+            // On CX segment going to Battersea - use CX core route
+            northernActiveRoute = northernCXCore;
+          } else {
+            // Not on CX segment - use Battersea branch
+            northernActiveRoute = northernBatterseaBranch;
+          }
+        } else if (destinationLower.includes('bank') || destinationLower.includes('moorgate') || destinationLower.includes('old street') || destinationLower.includes('angel')) {
+          northernActiveRoute = northernBankCore;
+        } else if (destinationLower.includes('charing cross') || destinationLower.includes('waterloo') || destinationLower.includes('embankment') || destinationLower.includes('leicester square') || destinationLower.includes('tottenham court road') || destinationLower.includes('goodge street') || destinationLower.includes('warren street')) {
+          northernActiveRoute = northernCXCore;
+        } else if (destinationLower.includes('edgware')) {
+          if (isOnCXSegment) {
+            // On CX segment going to Edgware - use CX core route
+            northernActiveRoute = northernCXCore;
+          } else {
+            // Not on CX segment - use full Edgware route
+            northernActiveRoute = [...northernCXCore, ...northernNorthShared.slice(1), ...northernToEdgware.slice(1)];
+          }
+        } else if (destinationLower.includes('high barnet')) {
+          if (isOnCXSegment) {
+            // On CX segment going to High Barnet - use CX core route
+            northernActiveRoute = northernCXCore;
+          } else {
+            // Not on CX segment - use full High Barnet route
+            northernActiveRoute = [...northernCXCore, ...northernNorthShared.slice(1), ...northernToHighBarnet.slice(1)];
+          }
+        } else if (destinationLower.includes('mill hill east')) {
+          if (isOnCXSegment) {
+            // On CX segment going to Mill Hill East - use CX core route
+            northernActiveRoute = northernCXCore;
+          } else {
+            // Not on CX segment - use full Mill Hill East route
+            northernActiveRoute = [...northernCXCore, ...northernNorthShared.slice(1), ...northernToHighBarnet.slice(1, -1), ...northernToMillHillEast.slice(1)];
+          }
+        } else if (destinationLower.includes('euston') || destinationLower.includes('camden town') || destinationLower.includes('mornington crescent')) {
+          northernActiveRoute = [...northernCXCore, ...northernNorthShared.slice(1)];
+        } else if (destinationLower.includes('morden')) {
+          northernActiveRoute = northernSouth;
+        }
+        
+        // Find current station position in the active route
+        const northernCurrentIndex = northernActiveRoute.findIndex(station => {
+          const stationLower = station.toLowerCase().replace(/[-\s]/g, '');
+          const currentStationLower = currentStation.toLowerCase().replace(/[-\s]/g, '');
+          return stationLower === currentStationLower;
+        });
+        
+        if (northernCurrentIndex === -1) {
+          return 'Unknown'; // Fallback
+        }
+        
+        // Determine next station based on direction
+        if (destinationLower.includes('morden')) {
+          // Going towards Morden (southbound) - go backwards in route
+          return northernActiveRoute[northernCurrentIndex - 1] || 'Unknown';
+        } else if (destinationLower.includes('battersea')) {
+          // Going towards Battersea - go forwards in route
+          return northernActiveRoute[northernCurrentIndex + 1] || 'Unknown';
+        } else if (destinationLower.includes('bank') || destinationLower.includes('moorgate') || destinationLower.includes('old street') || destinationLower.includes('angel')) {
+          // Going towards Bank branch destinations - go forwards in route
+          return northernActiveRoute[northernCurrentIndex + 1] || 'Unknown';
+        } else if (destinationLower.includes('charing cross') || destinationLower.includes('waterloo') || destinationLower.includes('embankment') || destinationLower.includes('leicester square') || destinationLower.includes('tottenham court road') || destinationLower.includes('goodge street') || destinationLower.includes('warren street')) {
+          // Going towards Charing Cross branch destinations - go forwards in route
+          return northernActiveRoute[northernCurrentIndex + 1] || 'Unknown';
+        } else if (destinationLower.includes('edgware') || destinationLower.includes('high barnet') || destinationLower.includes('mill hill east')) {
+          // Going towards northern destinations - go forwards in route
+          return northernActiveRoute[northernCurrentIndex + 1] || 'Unknown';
+        } else {
+          // Default: continue towards northern destinations
+          return northernActiveRoute[northernCurrentIndex + 1] || 'Unknown';
         }
         
       default:
@@ -3447,14 +4090,42 @@ const districtLineToEdgwareRoad = [
     // Special handling for Central Line with unified mapping
     if (lineId === 'central') {
       const nextStation = getUnifiedNextStation(lineId, currentStation, destination);
-      console.log(`CENTRAL Line Unified Debug:`, {
-        currentStation,
-        rawDestination,
-        extractedDestination: destination,
-        vehicleId: arrival.vehicleId,
-        nextStation: nextStation,
-        lineId: lineId
-      });
+      
+      if (!lineTopology) {
+        return { nextStation: 'Loading...', duration: 'N/A' };
+      }
+      
+      const duration = calculateDynamicDuration(arrivalsData || [], currentStation, nextStation, lineId, arrival.vehicleId);
+      return { nextStation, duration };
+    }
+    
+    // Special handling for Jubilee Line with unified mapping
+    if (lineId === 'jubilee') {
+      const nextStation = getUnifiedNextStation(lineId, currentStation, destination);
+      
+      if (!lineTopology) {
+        return { nextStation: 'Loading...', duration: 'N/A' };
+      }
+      
+      const duration = calculateDynamicDuration(arrivalsData || [], currentStation, nextStation, lineId, arrival.vehicleId);
+      return { nextStation, duration };
+    }
+    
+    // Special handling for Metropolitan Line with unified mapping
+    if (lineId === 'metropolitan') {
+      const nextStation = getUnifiedNextStation(lineId, currentStation, destination);
+      
+      if (!lineTopology) {
+        return { nextStation: 'Loading...', duration: 'N/A' };
+      }
+      
+      const duration = calculateDynamicDuration(arrivalsData || [], currentStation, nextStation, lineId, arrival.vehicleId);
+      return { nextStation, duration };
+    }
+    
+    // Special handling for Northern Line with unified mapping
+    if (lineId === 'northern') {
+      const nextStation = getUnifiedNextStation(lineId, currentStation, destination);
       
       if (!lineTopology) {
         return { nextStation: 'Loading...', duration: 'N/A' };
@@ -3649,13 +4320,7 @@ const districtLineToEdgwareRoad = [
                 { value: 'circle', label: 'Circle Line' },
                 { value: 'district', label: 'District Line' },
                 { value: 'hammersmith-city', label: 'Hammersmith & City Line' },
-                { value: 'jubilee', label: 'Jubilee Line' },
-                { value: 'metropolitan', label: 'Metropolitan Line' },
-                { value: 'northern', label: 'Northern Line' },
-                { value: 'piccadilly', label: 'Piccadilly Line' },
-                { value: 'victoria', label: 'Victoria Line' },
-                { value: 'waterloo-city', label: 'Waterloo & City Line' },
-                { value: 'elizabeth', label: 'Elizabeth Line' }
+                { value: 'metropolitan', label: 'Metropolitan Line' }
               ].map((line) => (
                 <label key={line.value} className="flex items-center">
                   <input
@@ -3942,6 +4607,93 @@ const districtLineToEdgwareRoad = [
                                destinationLower.includes('stratford') || 
                                destinationLower.includes('willesden green') || 
                                destinationLower.includes('wembley park');
+                      }
+                      
+                      // Metropolitan Line: Only show entries with correct stations and destinations
+                      if (lineId === 'metropolitan') {
+                        // Filter out stations that don't belong to Metropolitan Line
+                        const metropolitanStations = [
+                          'aldgate', 'liverpool street', 'moorgate', 'barbican', 'farringdon',
+                          'king\'s cross st. pancras', 'euston square', 'great portland street',
+                          'baker street', 'finchley road', 'wembley park', 'preston road',
+                          'northwick park', 'harrow-on-the-hill', 'north harrow', 'pinner',
+                          'northwood hills', 'northwood', 'moor park', 'rickmansworth',
+                          'chorleywood', 'chalfont & latimer', 'amersham', 'chesham',
+                          'croxley', 'watford', 'west harrow', 'rayners lane', 'eastcote',
+                          'ruislip manor', 'ruislip', 'ickenham', 'hillingdon', 'uxbridge'
+                        ];
+                        
+                        const isCorrectStation = metropolitanStations.some(station => 
+                          stationNameLower.includes(station)
+                        );
+                        
+                        if (!isCorrectStation) {
+                          return false;
+                        }
+                        
+                        // Only allow main destinations
+                        return destinationLower.includes('aldgate') || 
+                               destinationLower.includes('amersham') || 
+                               destinationLower.includes('chesham') || 
+                               destinationLower.includes('watford') || 
+                               destinationLower.includes('uxbridge') || 
+                               destinationLower.includes('baker street') || 
+                               destinationLower.includes('harrow') || 
+                               destinationLower.includes('check front') || 
+                               destinationLower.includes('front of train');
+                      }
+                      
+                      // Northern Line: Only show entries with correct stations and destinations
+                      if (lineId === 'northern') {
+                        // Filter out stations that don't belong to Northern Line
+                        const northernStations = [
+                          'morden', 'south wimbledon', 'colliers wood', 'tooting broadway', 'tooting bec',
+                          'balham', 'clapham south', 'clapham common', 'clapham north', 'stockwell',
+                          'oval', 'kennington', 'nine elms', 'battersea power station',
+                          'elephant & castle', 'borough', 'london bridge', 'bank', 'moorgate',
+                          'old street', 'angel', 'king\'s cross st. pancras', 'euston',
+                          'waterloo', 'embankment', 'charing cross', 'leicester square',
+                          'tottenham court road', 'goodge street', 'warren street',
+                          'mornington crescent', 'camden town', 'chalk farm', 'belsize park',
+                          'hampstead', 'golders green', 'brent cross', 'hendon central',
+                          'colindale', 'burnt oak', 'edgware', 'kentish town', 'tufnell park',
+                          'archway', 'highgate', 'east finchley', 'finchley central',
+                          'west finchley', 'woodside park', 'totteridge & whetstone',
+                          'high barnet', 'mill hill east'
+                        ];
+                        
+                        const isCorrectStation = northernStations.some(station => 
+                          stationNameLower.includes(station)
+                        );
+                        
+                        if (!isCorrectStation) {
+                          return false;
+                        }
+                        
+                        // Only allow main destinations
+                        return destinationLower.includes('morden') || 
+                               destinationLower.includes('battersea') || 
+                               destinationLower.includes('bank') || 
+                               destinationLower.includes('moorgate') || 
+                               destinationLower.includes('old street') || 
+                               destinationLower.includes('angel') || 
+                               destinationLower.includes('charing cross') || 
+                               destinationLower.includes('waterloo') || 
+                               destinationLower.includes('embankment') || 
+                               destinationLower.includes('leicester square') || 
+                               destinationLower.includes('tottenham court road') || 
+                               destinationLower.includes('goodge street') || 
+                               destinationLower.includes('warren street') || 
+                               destinationLower.includes('euston') || 
+                               destinationLower.includes('camden town') || 
+                               destinationLower.includes('mornington crescent') || 
+                               destinationLower.includes('edgware') || 
+                               destinationLower.includes('high barnet') || 
+                               destinationLower.includes('mill hill east') ||
+                               destinationLower.includes('via cx') ||
+                               destinationLower.includes('via bank') ||
+                               destinationLower.includes('via charing cross') ||
+                               destinationLower.includes('via bank branch');
                       }
                       
                       // For other lines, show all arrivals

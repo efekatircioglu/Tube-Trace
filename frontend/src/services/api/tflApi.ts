@@ -11,17 +11,6 @@ export const apiClient = axios.create({
 });
 
 export const tflApi = {
-  // Test TFL API call
-  testTflApi: async () => {
-    try {
-      const response = await apiClient.get('/api/tfl/test');
-      return response.data;
-    } catch (error) {
-      console.error('TFL API Error:', error);
-      throw error;
-    }
-  },
-
   // Circle Line Status
   getCircleLineStatus: async () => {
     try {
@@ -44,28 +33,6 @@ export const tflApi = {
     }
   },
 
-  // Transport Disruptions
-  getTransportDisruptions: async (modes: string = 'tube,bus,dlr') => {
-    try {
-      const response = await apiClient.get(`/api/tfl/disruptions?modes=${modes}`);
-      return response.data;
-    } catch (error) {
-      console.error('Transport Disruptions Error:', error);
-      throw error;
-    }
-  },
-
-  // Line-specific Disruptions
-  getLineDisruptions: async (lineIds: string) => {
-    try {
-      const response = await apiClient.get(`/api/tfl/lines/disruptions?line_ids=${lineIds}`);
-      return response.data;
-    } catch (error) {
-      console.error('Line Disruptions Error:', error);
-      throw error;
-    }
-  },
-
   // Line-specific Arrivals
   getLineArrivals: async (lineIds: string) => {
     try {
@@ -84,28 +51,6 @@ export const tflApi = {
       return response.data;
     } catch (error) {
       console.error('Line Status Error:', error);
-      throw error;
-    }
-  },
-
-  // Health check
-  healthCheck: async () => {
-    try {
-      const response = await apiClient.get('/health');
-      return response.data;
-    } catch (error) {
-      console.error('Health Check Error:', error);
-      throw error;
-    }
-  },
-
-  // Root endpoint
-  getRoot: async () => {
-    try {
-      const response = await apiClient.get('/');
-      return response.data;
-    } catch (error) {
-      console.error('Root API Error:', error);
       throw error;
     }
   },

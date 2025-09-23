@@ -26,37 +26,6 @@ app.add_middleware(
 TFL_API_KEY = os.getenv("TFL_API_KEY")
 TFL_BASE_URL = "https://api.tfl.gov.uk"
 
-@app.get("/")
-async def root():
-    return {"message": "Tube Trace API is running!"}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "api_key_configured": bool(TFL_API_KEY)}
-
-@app.get("/api/tfl/test")
-async def test_tfl_api():
-    """Test endpoint to call TFL API for Circle Line timetable"""
-    if not TFL_API_KEY:
-        raise HTTPException(status_code=500, detail="TFL_API_KEY not configured")
-    
-    # The URL you provided: https://api.tfl.gov.uk/Line/circle/Timetable/940GZZLUALD
-    url = f"{TFL_BASE_URL}/Line/circle/Timetable/940GZZLUALD"
-    
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url,
-                params={"app_key": TFL_API_KEY},
-                timeout=10.0
-            )
-            response.raise_for_status()
-            return response.json()
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"TFL API error: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
 @app.get("/api/tfl/circle/status")
 async def get_circle_line_status():
     """Get Circle Line status information"""
@@ -86,50 +55,6 @@ async def get_circle_line_arrivals():
         raise HTTPException(status_code=500, detail="TFL_API_KEY not configured")
     
     url = f"{TFL_BASE_URL}/Line/circle/Arrivals"
-    
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url,
-                params={"app_key": TFL_API_KEY},
-                timeout=10.0
-            )
-            response.raise_for_status()
-            return response.json()
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"TFL API error: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
-@app.get("/api/tfl/disruptions")
-async def get_transport_disruptions(modes: str = "tube,bus,dlr"):
-    """Get transport disruptions for specified modes"""
-    if not TFL_API_KEY:
-        raise HTTPException(status_code=500, detail="TFL_API_KEY not configured")
-    
-    url = f"{TFL_BASE_URL}/Line/Mode/{modes}/Disruption"
-    
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url,
-                params={"app_key": TFL_API_KEY},
-                timeout=10.0
-            )
-            response.raise_for_status()
-            return response.json()
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"TFL API error: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
-@app.get("/api/tfl/lines/disruptions")
-async def get_line_disruptions(line_ids: str):
-    """Get disruptions for specific train lines"""
-    if not TFL_API_KEY:
-        raise HTTPException(status_code=500, detail="TFL_API_KEY not configured")
-    
-    url = f"{TFL_BASE_URL}/Line/{line_ids}/Disruption"
     
     try:
         async with httpx.AsyncClient() as client:
